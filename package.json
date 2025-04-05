@@ -1,0 +1,23 @@
+{
+    "name": "steam-playtime-farmer",
+    "version": "0.3.0",
+    "description": "A simple Node.js application for farming playtime across multiple Steam games simultaneously.",
+    "main": "main.js",
+    "type": "module",
+    "scripts": {
+      "start": "node main.js"
+    },
+    "dependencies": {
+      "steam-user": "^4.28.1",
+      "steam-totp": "^2.1.2"
+    },
+    "keywords": [
+      "steam",
+      "playtime",
+      "farming",
+      "hours",
+      "tracker"
+    ],
+    "author": "",
+    "license": "MIT"
+  }

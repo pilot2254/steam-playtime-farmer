@@ -4,28 +4,28 @@ import readline from 'readline';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
+import { defaultConfig, appConfig } from './app.config.js';
 
 // Get the directory name
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG_PATH = path.join(__dirname, 'config.json');
+const CONFIG_PATH = path.join(__dirname, appConfig.configFileName);
+
+// Create Steam client
+const client = new SteamUser();
+
+// Config with defaults from app.config.js
+let config = { ...defaultConfig };
+
+// Track if we're currently farming
+let isFarming = false;
+let farmingRL = null;
 
 // Create readline interface
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-
-// Create Steam client
-const client = new SteamUser();
-
-// Default config
-let config = {
-  accountName: '',
-  sharedSecret: '',
-  games: [],
-  rememberPassword: false,
-  password: ''
-};
 
 // Function to ask a question and get response
 function question(query) {
@@ -35,7 +35,13 @@ function question(query) {
 // Function to save config
 async function saveConfig() {
   try {
-    await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
+    // Make sure we don't save the password if rememberPassword is false
+    const configToSave = { ...config };
+    if (!configToSave.rememberPassword) {
+      configToSave.password = '';
+    }
+    
+    await fs.writeFile(CONFIG_PATH, JSON.stringify(configToSave, null, 2));
     console.log('Configuration saved successfully.');
   } catch (err) {
     console.error('Failed to save configuration:', err);
@@ -45,44 +51,61 @@ async function saveConfig() {
 // Function to load config
 async function loadConfig() {
   try {
+    // Check if file exists first
+    if (!existsSync(CONFIG_PATH)) {
+      console.log('No configuration file found. Creating a new one.');
+      return false;
+    }
+    
     const data = await fs.readFile(CONFIG_PATH, 'utf8');
     const loadedConfig = JSON.parse(data);
     config = { ...config, ...loadedConfig };
     console.log('Configuration loaded successfully.');
     return true;
   } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.log('No configuration file found. Creating a new one.');
-    } else {
-      console.error('Failed to load configuration:', err);
-    }
+    console.error('Failed to load configuration:', err);
     return false;
   }
 }
 
 // Function to setup account
 async function setupAccount() {
+  console.log('\n===== Account Setup =====');
+  
   config.accountName = await question('Enter your Steam username: ');
   
   const rememberPassword = await question('Remember password? (yes/no): ');
-  config.rememberPassword = rememberPassword.toLowerCase() === 'yes';
+  config.rememberPassword = rememberPassword.toLowerCase().startsWith('y');
   
   if (config.rememberPassword) {
     config.password = await question('Enter your Steam password: ');
+  } else {
+    // Clear password if not remembering
+    config.password = '';
   }
   
   const has2FA = await question('Do you have Steam Guard Mobile Authenticator? (yes/no): ');
   
-  if (has2FA.toLowerCase() === 'yes') {
-    config.sharedSecret = await question('Enter your shared secret (leave blank if you don\'t have it): ');
+  if (has2FA.toLowerCase().startsWith('y')) {
+    console.log('\nShared Secret Info:');
+    console.log('- This allows automatic 2FA code generation');
+    console.log('- Leave blank if you prefer to enter codes manually');
+    console.log('- Advanced users can extract this from their authenticator\n');
+    
+    config.sharedSecret = await question('Enter your shared secret (or leave blank): ');
+  } else {
+    config.sharedSecret = '';
   }
   
   await saveConfig();
+  console.log('Account setup complete!');
 }
 
 // Function to manage games
 async function manageGames() {
-  console.log('\nCurrent games:');
+  console.log('\n===== Game Management =====');
+  console.log('Current games:');
+  
   if (config.games.length === 0) {
     console.log('No games configured.');
   } else {
@@ -100,10 +123,18 @@ async function manageGames() {
   
   switch (choice) {
     case '1':
-      const appId = await question('Enter game AppID: ');
+      const appIdInput = await question('Enter game AppID (number): ');
+      const appId = parseInt(appIdInput);
+      
+      if (isNaN(appId)) {
+        console.log('Invalid AppID. Please enter a number.');
+        return manageGames();
+      }
+      
       const name = await question('Enter game name (optional): ');
-      config.games.push({ appId: parseInt(appId), name: name || `Game ${appId}` });
+      config.games.push({ appId, name: name || `Game ${appId}` });
       await saveConfig();
+      console.log(`Game ${appId} added successfully.`);
       return manageGames();
     
     case '2':
@@ -111,12 +142,14 @@ async function manageGames() {
         console.log('No games to remove.');
         return manageGames();
       }
-      const index = await question('Enter the number of the game to remove: ');
-      const idx = parseInt(index) - 1;
+      
+      const indexInput = await question('Enter the number of the game to remove: ');
+      const idx = parseInt(indexInput) - 1;
+      
       if (idx >= 0 && idx < config.games.length) {
-        config.games.splice(idx, 1);
+        const removed = config.games.splice(idx, 1)[0];
         await saveConfig();
-        console.log('Game removed successfully.');
+        console.log(`Game ${removed.name} (${removed.appId}) removed successfully.`);
       } else {
         console.log('Invalid game number.');
       }
@@ -126,7 +159,7 @@ async function manageGames() {
       return mainMenu();
     
     default:
-      console.log('Invalid choice.');
+      console.log('Invalid choice. Please enter 1, 2, or 3.');
       return manageGames();
   }
 }
@@ -138,7 +171,13 @@ async function startFarming() {
     return mainMenu();
   }
   
-  console.log('Starting playtime farming...');
+  // Check if already farming
+  if (isFarming) {
+    console.log('Already farming playtime. Please stop the current session first.');
+    return mainMenu();
+  }
+  
+  console.log('\n===== Starting Playtime Farming =====');
   
   const loginDetails = {
     accountName: config.accountName,
@@ -153,60 +192,102 @@ async function startFarming() {
   
   // If we have a shared secret, generate the auth code
   if (config.sharedSecret) {
-    loginDetails.twoFactorCode = SteamTotp.generateAuthCode(config.sharedSecret);
+    try {
+      loginDetails.twoFactorCode = SteamTotp.generateAuthCode(config.sharedSecret);
+      console.log('Generated 2FA code automatically.');
+    } catch (err) {
+      console.log('Failed to generate 2FA code. You may need to enter it manually.');
+    }
   }
   
+  console.log('Logging in to Steam...');
   client.logOn(loginDetails);
   
+  // Set up event handlers
   client.on('loggedOn', () => {
     console.log(`Successfully logged in as ${config.accountName}`);
     
     // Get game IDs to play
     const gameIds = config.games.map(game => game.appId);
     
-    console.log(`Now farming playtime for ${config.games.length} games:`);
+    console.log(`\nNow farming playtime for ${config.games.length} games:`);
     config.games.forEach(game => console.log(`- ${game.name} (${game.appId})`));
     
     // Start playing the games
     client.gamesPlayed(gameIds);
+    isFarming = true;
     
-    console.log('\nPlaytime farming is now active. Press Ctrl+C to stop or type "exit" to return to menu.');
+    console.log('\nPlaytime farming is now active.');
+    console.log('Type "status" to check current status.');
+    console.log('Type "stop" to stop farming and return to menu.');
     
-    // Allow user to exit farming mode
-    const farmingRL = readline.createInterface({
+    // Create a new readline interface for farming mode
+    farmingRL = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
     
     farmingRL.on('line', (input) => {
-      if (input.toLowerCase() === 'exit') {
-        console.log('Stopping playtime farming...');
-        client.gamesPlayed([]);
-        client.logOff();
+      const command = input.toLowerCase().trim();
+      
+      if (command === 'stop') {
+        stopFarming();
         farmingRL.close();
+        farmingRL = null;
         mainMenu();
+      } else if (command === 'status') {
+        console.log(`\nCurrently farming ${config.games.length} games:`);
+        config.games.forEach(game => console.log(`- ${game.name} (${game.appId})`));
+        console.log('\nType "stop" to stop farming and return to menu.');
+      } else {
+        console.log('Unknown command. Type "status" to check status or "stop" to stop farming.');
       }
     });
   });
   
   // Handle Steam Guard (if shared secret wasn't provided or is invalid)
-  client.on('steamGuard', (domain, callback) => {
+  client.on('steamGuard', async (domain, callback) => {
     const domainText = domain ? ` for domain ${domain}` : '';
-    question(`Steam Guard code needed${domainText}: `).then(code => {
-      callback(code);
-    });
+    const code = await question(`Steam Guard code needed${domainText}: `);
+    callback(code);
   });
   
   // Handle errors
   client.on('error', (err) => {
     console.error('Steam client error:', err);
+    isFarming = false;
+    if (farmingRL) {
+      farmingRL.close();
+      farmingRL = null;
+    }
+    mainMenu();
+  });
+  
+  // Handle disconnects
+  client.on('disconnected', (eresult, msg) => {
+    console.log(`Disconnected from Steam: ${msg || eresult}`);
+    isFarming = false;
+    if (farmingRL) {
+      farmingRL.close();
+      farmingRL = null;
+    }
     mainMenu();
   });
 }
 
+// Function to stop farming
+function stopFarming() {
+  if (isFarming) {
+    console.log('Stopping playtime farming...');
+    client.gamesPlayed([]);
+    client.logOff();
+    isFarming = false;
+  }
+}
+
 // Main menu function
 async function mainMenu() {
-  console.log('\n===== Steam Playtime Tracker =====');
+  console.log(`\n===== ${appConfig.appName} =====`);
   console.log('1. Setup Account');
   console.log('2. Manage Games');
   console.log('3. Start Farming');
@@ -229,24 +310,28 @@ async function mainMenu() {
     
     case '4':
       console.log('Exiting...');
+      stopFarming();
       rl.close();
       process.exit(0);
     
     default:
-      console.log('Invalid choice.');
+      console.log('Invalid choice. Please enter a number between 1 and 4.');
       return mainMenu();
   }
 }
 
 // Start the application
 async function start() {
-  console.log('Steam Playtime Tracker');
+  console.log(`===== ${appConfig.appName} v${appConfig.version} =====`);
   
   // Try to load config
   const configLoaded = await loadConfig();
   
   if (configLoaded && config.accountName) {
     console.log(`Loaded configuration for account: ${config.accountName}`);
+    if (config.games.length > 0) {
+      console.log(`Found ${config.games.length} configured games.`);
+    }
   }
   
   await mainMenu();
@@ -255,12 +340,12 @@ async function start() {
 // Handle application exit
 process.on('SIGINT', () => {
   console.log('\nExiting application...');
-  if (client.steamID) {
-    client.gamesPlayed([]);
-    client.logOff();
-  }
+  stopFarming();
   process.exit(0);
 });
 
 // Start the application
-start();
+start().catch(err => {
+  console.error('Application error:', err);
+  process.exit(1);
+});
