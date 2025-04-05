@@ -1,0 +1,45 @@
+{
+  "accountName": "",
+  "sharedSecret": "",
+  "games": [
+    {
+      "appId": 221410,
+      "name": "Steam for Linux"
+    },
+    {
+      "appId": 730,
+      "name": "CS2"
+    },
+    {
+      "appId": 526870,
+      "name": "Satisfactory"
+    },
+    {
+      "appId": 105600,
+      "name": "Terraria"
+    },
+    {
+      "appId": 359550,
+      "name": "Rainbow Six"
+    },
+    {
+      "appId": 1118310,
+      "name": "RetroArch"
+    },
+    {
+      "appId": 493520,
+      "name": "GTFO"
+    },
+    {
+      "appId": 365670,
+      "name": "Blender"
+    },
+    {
+      "appId": 271590,
+      "name": "GTA V"
+    }
+  ],
+  "rememberPassword": true,
+  "password": "",
+  "name": "pilot2254"
+}
