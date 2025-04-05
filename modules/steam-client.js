@@ -6,17 +6,27 @@ import { fileURLToPath } from 'url';
 // Get the directory name
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Define appConfig (replace with your actual configuration)
+const appConfig = {
+  appName: 'YourAppName',
+  version: '1.0.0'
+};
+
 export function createSteamClient() {
   // Create Steam client with proper options
   const client = new SteamUser({
     promptSteamGuardCode: false,
     dataDirectory: path.join(__dirname, '..'),
-    autoRelogin: true
+    autoRelogin: true,
+    renewRefreshTokens: true, // Added to improve session handling
+    machineName: `${appConfig.appName} v${appConfig.version}` // Better identification
   });
   
   // State
   let isFarming = false;
   let currentGames = [];
+  let loginAttempts = 0;
+  const MAX_LOGIN_ATTEMPTS = 3;
   
   // Event handlers
   const eventHandlers = {
@@ -26,6 +36,13 @@ export function createSteamClient() {
     disconnected: []
   };
   
+  // Clear all event handlers for a specific event
+  function clearEventHandlers(event) {
+    if (eventHandlers[event]) {
+      eventHandlers[event] = [];
+    }
+  }
+  
   // Register event handlers
   function setupEvents() {
     // Remove any existing listeners to prevent duplicates
@@ -33,18 +50,29 @@ export function createSteamClient() {
     
     // Set up basic event handlers
     client.on('loggedOn', () => {
+      console.log(`Successfully logged in as ${client.steamID.getSteamID64()}`);
+      loginAttempts = 0; // Reset login attempts on success
       client.setPersona(SteamUser.EPersonaState.Online);
       isFarming = true;
       
       // Call all registered handlers
       eventHandlers.loggedOn.forEach(handler => handler());
+      
+      // Clear steamGuard handlers after successful login
+      clearEventHandlers('steamGuard');
     });
     
     client.on('steamGuard', (domain, callback, lastCodeWrong) => {
       // Call all registered handlers
-      eventHandlers.steamGuard.forEach(handler => 
-        handler(domain, callback, lastCodeWrong)
-      );
+      if (eventHandlers.steamGuard.length > 0) {
+        eventHandlers.steamGuard.forEach(handler => 
+          handler(domain, callback, lastCodeWrong)
+        );
+      } else {
+        // Fallback if no handlers registered
+        console.log('Steam Guard required but no handler registered. Please restart the application.');
+        client.logOff();
+      }
     });
     
     client.on('error', (err) => {
@@ -64,16 +92,38 @@ export function createSteamClient() {
         handler(eresult, msg)
       );
     });
+    
+    // Add session expired handler
+    client.on('sessionExpired', () => {
+      console.log('Session expired. Reconnecting...');
+      if (loginAttempts < MAX_LOGIN_ATTEMPTS) {
+        loginAttempts++;
+        // We don't need to do anything - autoRelogin will handle it
+      } else {
+        console.log('Too many reconnection attempts. Please restart the application.');
+        isFarming = false;
+        
+        // Call error handlers
+        eventHandlers.error.forEach(handler => 
+          handler(new Error('Too many reconnection attempts'))
+        );
+      }
+    });
   }
   
   // Update the games being played
   function updateGamesPlayed() {
     if (!isFarming || !client.loggedOn || currentGames.length === 0) return false;
     
-    // For multiple games, we need to use an array of objects
-    const gameObjects = currentGames.map(appId => ({ game_id: appId }));
-    client.gamesPlayed(gameObjects);
-    return true;
+    try {
+      // For multiple games, we need to use an array of objects
+      const gameObjects = currentGames.map(appId => ({ game_id: parseInt(appId) }));
+      client.gamesPlayed(gameObjects);
+      return true;
+    } catch (err) {
+      console.error('Error updating games:', err);
+      return false;
+    }
   }
   
   return {
@@ -84,12 +134,18 @@ export function createSteamClient() {
     getStatus: () => ({
       connected: client.connected,
       loggedOn: client.loggedOn,
-      steamID: client.steamID ? client.steamID.toString() : null,
-      playingAppIds: client._playingAppIds || []
+      steamID: client.steamID ? client.steamID.getSteamID64() : null,
+      playingAppIds: client._playingAppIds || [],
+      currentGames: [...currentGames]
     }),
     
     // Login to Steam
     login: async (accountName, password, sharedSecret) => {
+      // Reset state
+      loginAttempts = 0;
+      isFarming = false;
+      
+      // Setup events before login
       setupEvents();
       
       const loginDetails = {
@@ -117,16 +173,37 @@ export function createSteamClient() {
       if (eventHandlers[event]) {
         eventHandlers[event].push(handler);
       }
+      return () => {
+        // Return a function to remove this specific handler
+        if (eventHandlers[event]) {
+          const index = eventHandlers[event].indexOf(handler);
+          if (index !== -1) {
+            eventHandlers[event].splice(index, 1);
+          }
+        }
+      };
     },
+    
+    // Clear all handlers for an event
+    clearHandlers: clearEventHandlers,
     
     // Start farming games
     startFarming: (gameIds) => {
-      currentGames = [...gameIds];
+      if (!Array.isArray(gameIds)) {
+        console.error('Invalid game IDs provided');
+        return false;
+      }
+      
+      currentGames = gameIds.map(id => parseInt(id)).filter(id => !isNaN(id));
       
       if (client.loggedOn) {
         setTimeout(() => {
-          updateGamesPlayed();
-          console.log(`\nNow farming ${currentGames.length} games.`);
+          const success = updateGamesPlayed();
+          if (success) {
+            console.log(`\nNow farming ${currentGames.length} games.`);
+          } else {
+            console.log('\nFailed to start farming games.');
+          }
         }, 1000);
         return true;
       }
@@ -136,41 +213,51 @@ export function createSteamClient() {
     
     // Stop farming
     stopFarming: () => {
-      if (isFarming) {
-        console.log('Stopping playtime farming...');
-        client.gamesPlayed([]);
-        client.setPersona(SteamUser.EPersonaState.Offline);
-        client.logOff();
-        isFarming = false;
-        return true;
+      if (client.loggedOn) {
+        try {
+          client.gamesPlayed([]);
+          client.setPersona(SteamUser.EPersonaState.Offline);
+          client.logOff();
+        } catch (err) {
+          console.error('Error stopping farming:', err);
+        }
       }
-      return false;
+      
+      isFarming = false;
+      currentGames = [];
+      return true;
     },
     
     // Add a game to farming
     addGame: (appId) => {
-      if (!currentGames.includes(appId)) {
-        currentGames.push(appId);
-        updateGamesPlayed();
-        return true;
+      const numAppId = parseInt(appId);
+      if (isNaN(numAppId)) return false;
+      
+      if (!currentGames.includes(numAppId)) {
+        currentGames.push(numAppId);
+        return updateGamesPlayed();
       }
       return false;
     },
     
     // Remove a game from farming
     removeGame: (appId) => {
-      const index = currentGames.indexOf(appId);
+      const numAppId = parseInt(appId);
+      if (isNaN(numAppId)) return false;
+      
+      const index = currentGames.indexOf(numAppId);
       if (index !== -1) {
         currentGames.splice(index, 1);
-        updateGamesPlayed();
-        return true;
+        return updateGamesPlayed();
       }
       return false;
     },
     
     // Update all games being farmed
     updateGames: (gameIds) => {
-      currentGames = [...gameIds];
+      if (!Array.isArray(gameIds)) return false;
+      
+      currentGames = gameIds.map(id => parseInt(id)).filter(id => !isNaN(id));
       return updateGamesPlayed();
     }
   };

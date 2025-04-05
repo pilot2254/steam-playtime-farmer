@@ -8,7 +8,7 @@ export const appConfig = {
   appName: "Steam Playtime Farmer",
   
   // Application version
-  version: "0.5.0",
+  version: "0.6.0",
   
   // Name of the configuration file that stores user settings
   configFileName: "user-config.json"
