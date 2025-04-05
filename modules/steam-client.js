@@ -12,9 +12,7 @@ export function createSteamClient() {
   const client = new SteamUser({
     promptSteamGuardCode: false,
     dataDirectory: path.join(__dirname, '..'),
-    autoRelogin: true,
-    renewRefreshTokens: true,
-    machineName: `${appConfig.appName} v${appConfig.version}`
+    autoRelogin: true
   });
   
   // State
@@ -47,7 +45,11 @@ export function createSteamClient() {
     client.on('loggedOn', () => {
       console.log(`Successfully logged in as ${client.accountName}`);
       loginAttempts = 0; // Reset login attempts on success
+      
+      // Set online status
       client.setPersona(SteamUser.EPersonaState.Online);
+      
+      // Set farming flag
       isFarming = true;
       
       // Call all registered handlers
@@ -108,12 +110,34 @@ export function createSteamClient() {
   
   // Update the games being played
   function updateGamesPlayed() {
-    if (!isFarming || !client.loggedOn || currentGames.length === 0) return false;
+    if (!client.steamID) {
+      console.log('Not logged in to Steam. Cannot update games.');
+      return false;
+    }
+    
+    if (currentGames.length === 0) {
+      console.log('No games to play.');
+      return false;
+    }
     
     try {
+      console.log(`Attempting to play ${currentGames.length} games...`);
+      
       // For multiple games, we need to use an array of objects
-      const gameObjects = currentGames.map(appId => ({ game_id: parseInt(appId) }));
-      client.gamesPlayed(gameObjects);
+      if (currentGames.length > 1) {
+        const gameObjects = currentGames.map(appId => ({ game_id: parseInt(appId) }));
+        client.gamesPlayed(gameObjects);
+      } else {
+        // For a single game, we can just use the ID
+        client.gamesPlayed(currentGames[0]);
+      }
+      
+      // Verify games are being played
+      setTimeout(() => {
+        const playingGames = client._playingAppIds || [];
+        console.log(`Now playing: ${playingGames.join(', ')}`);
+      }, 2000);
+      
       return true;
     } catch (err) {
       console.error('Error updating games:', err);
@@ -127,8 +151,8 @@ export function createSteamClient() {
     
     // Get client status
     getStatus: () => ({
-      connected: client.connected,
-      loggedOn: client.loggedOn,
+      connected: !!client.steamID,
+      loggedOn: !!client.steamID,
       steamID: client.steamID ? client.steamID.toString() : null,
       playingAppIds: client._playingAppIds || [],
       currentGames: [...currentGames]
@@ -139,6 +163,7 @@ export function createSteamClient() {
       // Reset state
       loginAttempts = 0;
       isFarming = false;
+      currentGames = [];
       
       // Setup events before login
       setupEvents();
@@ -191,25 +216,23 @@ export function createSteamClient() {
       
       currentGames = gameIds.map(id => parseInt(id)).filter(id => !isNaN(id));
       
-      if (client.loggedOn) {
+      if (client.steamID) {
+        console.log('Starting to farm games...');
         setTimeout(() => {
-          const success = updateGamesPlayed();
-          if (success) {
-            console.log(`\nNow farming ${currentGames.length} games.`);
-          } else {
-            console.log('\nFailed to start farming games.');
-          }
+          updateGamesPlayed();
         }, 1000);
         return true;
+      } else {
+        console.error('Not logged in to Steam. Cannot start farming.');
+        return false;
       }
-      
-      return false;
     },
     
     // Stop farming
     stopFarming: () => {
-      if (client.loggedOn) {
+      if (client.steamID) {
         try {
+          console.log('Stopping game farming...');
           client.gamesPlayed([]);
           client.setPersona(SteamUser.EPersonaState.Offline);
           client.logOff();
@@ -230,6 +253,7 @@ export function createSteamClient() {
       
       if (!currentGames.includes(numAppId)) {
         currentGames.push(numAppId);
+        console.log(`Adding game ${numAppId} to farming list...`);
         return updateGamesPlayed();
       }
       return false;
@@ -243,6 +267,7 @@ export function createSteamClient() {
       const index = currentGames.indexOf(numAppId);
       if (index !== -1) {
         currentGames.splice(index, 1);
+        console.log(`Removing game ${numAppId} from farming list...`);
         return updateGamesPlayed();
       }
       return false;
