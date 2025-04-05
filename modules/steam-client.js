@@ -2,15 +2,10 @@ import SteamUser from 'steam-user';
 import SteamTotp from 'steam-totp';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { appConfig } from '../app.config.js';
 
 // Get the directory name
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Define appConfig (replace with your actual configuration)
-const appConfig = {
-  appName: 'YourAppName',
-  version: '1.0.0'
-};
 
 export function createSteamClient() {
   // Create Steam client with proper options
@@ -18,8 +13,8 @@ export function createSteamClient() {
     promptSteamGuardCode: false,
     dataDirectory: path.join(__dirname, '..'),
     autoRelogin: true,
-    renewRefreshTokens: true, // Added to improve session handling
-    machineName: `${appConfig.appName} v${appConfig.version}` // Better identification
+    renewRefreshTokens: true,
+    machineName: `${appConfig.appName} v${appConfig.version}`
   });
   
   // State
@@ -50,7 +45,7 @@ export function createSteamClient() {
     
     // Set up basic event handlers
     client.on('loggedOn', () => {
-      console.log(`Successfully logged in as ${client.steamID.getSteamID64()}`);
+      console.log(`Successfully logged in as ${client.accountName}`);
       loginAttempts = 0; // Reset login attempts on success
       client.setPersona(SteamUser.EPersonaState.Online);
       isFarming = true;
@@ -134,7 +129,7 @@ export function createSteamClient() {
     getStatus: () => ({
       connected: client.connected,
       loggedOn: client.loggedOn,
-      steamID: client.steamID ? client.steamID.getSteamID64() : null,
+      steamID: client.steamID ? client.steamID.toString() : null,
       playingAppIds: client._playingAppIds || [],
       currentGames: [...currentGames]
     }),

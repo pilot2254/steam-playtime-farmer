@@ -1,3 +1,7 @@
+# Main Steam Playtime Farmer files
+user-config.json
+cm_list.json
+
 # Logs
 logs
 *.log
