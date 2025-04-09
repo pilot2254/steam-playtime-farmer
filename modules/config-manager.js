@@ -4,13 +4,11 @@
  */
 import fs from "fs"
 import path from "path"
-import { fileURLToPath } from "url"
 import { appConfig, defaultConfig } from "../app.config.js"
 
-// Get the directory name
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const CONFIG_FILE = path.join(__dirname, "..", appConfig.configFileName)
-const PRESETS_DIR = path.join(__dirname, "..", "presets")
+// Configuration file paths
+const CONFIG_FILE = appConfig.paths.configFile
+const PRESETS_DIR = appConfig.paths.presetsDir
 
 /**
  * Creates a configuration manager for handling user settings

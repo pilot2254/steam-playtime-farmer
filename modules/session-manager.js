@@ -3,12 +3,10 @@
  * Handles saving and loading Steam session data for persistent connections
  */
 import fs from "fs"
-import path from "path"
-import { fileURLToPath } from "url"
+import { appConfig } from "../app.config.js"
 
-// Get the directory name and set session file path
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const SESSION_FILE = path.join(__dirname, "..", "steam-session.dat")
+// Session file path
+const SESSION_FILE = appConfig.paths.sessionFile
 
 export function createSessionManager() {
   return {

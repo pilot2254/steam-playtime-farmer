@@ -8,7 +8,8 @@ import path from "path"
 import { fileURLToPath } from "url"
 import { createSessionManager } from "./session-manager.js"
 import { createConnectionManager } from "./connection-manager.js"
-import { createEventManager } from "./event-manager.js" // New module for event handling
+import { createEventManager } from "./event-manager.js"
+import { appConfig } from "../app.config.js"
 
 // Get the directory name
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -20,15 +21,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export function createSteamClient() {
   // Create Steam client with proper options
   const client = new SteamUser({
-    promptSteamGuardCode: false, // We'll handle Steam Guard ourselves
+    promptSteamGuardCode: appConfig.steam.client.promptSteamGuardCode,
     dataDirectory: path.join(__dirname, ".."),
-    autoRelogin: false, // We'll handle relogin ourselves for better control
+    autoRelogin: appConfig.steam.client.autoRelogin,
   })
 
   // Create managers
   const sessionManager = createSessionManager()
   const connectionManager = createConnectionManager()
-  const eventManager = createEventManager() // New event manager
+  const eventManager = createEventManager()
 
   // State variables
   let isFarming = false // Whether we're currently farming games

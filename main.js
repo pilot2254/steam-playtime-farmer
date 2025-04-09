@@ -10,16 +10,10 @@ import { createConfigManager } from "./modules/config-manager.js"
 import { createUserInterface } from "./modules/user-interface.js"
 import { appConfig } from "./app.config.js"
 import { existsSync, mkdirSync } from "fs"
-import path from "path"
-import { fileURLToPath } from "url"
-
-// Get the directory name
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Ensure presets directory exists
-const PRESETS_DIR = path.join(__dirname, "presets")
-if (!existsSync(PRESETS_DIR)) {
-  mkdirSync(PRESETS_DIR, { recursive: true })
+if (!existsSync(appConfig.paths.presetsDir)) {
+  mkdirSync(appConfig.paths.presetsDir, { recursive: true })
 }
 
 // Initialize modules
@@ -29,8 +23,8 @@ const ui = createUserInterface(configManager, steamClient)
 
 // Configure reconnection settings
 steamClient.configureReconnect({
-  maxReconnectAttempts: 10, // Try up to 10 times
-  reconnectDelay: 3000, // Start with 3 seconds delay
+  maxReconnectAttempts: appConfig.steam.reconnect.maxAttempts,
+  reconnectDelay: appConfig.steam.reconnect.initialDelay,
 })
 
 /**
@@ -38,7 +32,7 @@ steamClient.configureReconnect({
  */
 async function start() {
   console.log(`===== ${appConfig.appName} v${appConfig.version} =====`)
-  console.log(`Automatic reconnection is enabled (max ${10} attempts)`)
+  console.log(`Automatic reconnection is enabled (max ${appConfig.steam.reconnect.maxAttempts} attempts)`)
 
   // Load configuration
   await configManager.load()

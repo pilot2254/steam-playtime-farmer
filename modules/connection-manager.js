@@ -2,6 +2,7 @@
  * Connection Manager Module
  * Handles reconnection logic and connection state tracking
  */
+import { appConfig } from "../app.config.js"
 
 export function createConnectionManager() {
   // Connection state with default values
@@ -9,8 +10,8 @@ export function createConnectionManager() {
     connected: false, // Is currently connected to Steam
     reconnecting: false, // Is attempting to reconnect
     reconnectAttempts: 0, // Number of reconnection attempts made
-    maxReconnectAttempts: 5, // Maximum number of reconnection attempts
-    reconnectDelay: 5000, // Base delay between reconnection attempts (ms)
+    maxReconnectAttempts: appConfig.steam.reconnect.maxAttempts, // Maximum number of reconnection attempts
+    reconnectDelay: appConfig.steam.reconnect.initialDelay, // Base delay between reconnection attempts (ms)
     accountName: null, // Steam account name for logging
     lastDisconnectReason: null, // Reason for last disconnection
     reconnectFunc: null, // Function to call for reconnection
@@ -82,8 +83,9 @@ export function createConnectionManager() {
 
       // Calculate exponential backoff delay (increases with each attempt)
       const delay = Math.min(
-        connectionState.reconnectDelay * Math.pow(1.5, connectionState.reconnectAttempts),
-        60000, // Cap at 60 seconds
+        connectionState.reconnectDelay *
+          Math.pow(appConfig.steam.reconnect.backoffMultiplier, connectionState.reconnectAttempts),
+        appConfig.steam.reconnect.maxDelay, // Cap at max delay
       )
 
       // Notify reconnecting if callback is registered
