@@ -1,305 +1,345 @@
-import fs from 'fs/promises';
-import { existsSync, mkdirSync, readFileSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { defaultConfig, appConfig } from '../app.config.js';
+/**
+ * Config Manager Module
+ * Handles loading, saving, and managing user configuration
+ */
+import fs from "fs"
+import path from "path"
+import { fileURLToPath } from "url"
+import { appConfig, defaultConfig } from "../app.config.js"
 
 // Get the directory name
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CONFIG_PATH = path.join(__dirname, '..', appConfig.configFileName);
-const PRESETS_DIR = path.join(__dirname, '..', 'presets');
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const CONFIG_FILE = path.join(__dirname, "..", appConfig.configFileName)
+const PRESETS_DIR = path.join(__dirname, "..", "presets")
 
-// Ensure presets directory exists
-if (!existsSync(PRESETS_DIR)) {
-  mkdirSync(PRESETS_DIR, { recursive: true });
-}
-
+/**
+ * Creates a configuration manager for handling user settings
+ * @returns {Object} Configuration manager API
+ */
 export function createConfigManager() {
-  // Config with defaults from app.config.js
-  let config = { ...defaultConfig };
-  // Current preset name (null if using default config)
-  let currentPreset = null;
-  
-  return {
-    // Get the current config
-    get() {
-      return config;
-    },
-    
-    // Save config to file
-    async save() {
-      try {
-        // Make sure we don't save the password if rememberPassword is false
-        const configToSave = { ...config };
-        if (!configToSave.rememberPassword) {
-          configToSave.password = '';
-        }
-        
-        await fs.writeFile(CONFIG_PATH, JSON.stringify(configToSave, null, 2));
-        console.log('Configuration saved successfully.');
-        return true;
-      } catch (err) {
-        console.error('Failed to save configuration:', err);
-        return false;
-      }
-    },
-    
-    // Load config from file
-    async load() {
-      try {
-        // Check if file exists first
-        if (!existsSync(CONFIG_PATH)) {
-          console.log('No configuration file found. Creating a new one.');
-          return false;
-        }
-        
-        const data = await fs.readFile(CONFIG_PATH, 'utf8');
-        const loadedConfig = JSON.parse(data);
-        config = { ...config, ...loadedConfig };
-        
-        if (config.accountName) {
-          console.log(`Loaded configuration for account: ${config.accountName}`);
-          if (config.games.length > 0) {
-            console.log(`Found ${config.games.length} configured games.`);
-          }
-        }
-        
-        return true;
-      } catch (err) {
-        console.error('Failed to load configuration:', err);
-        return false;
-      }
-    },
-    
-    // Add a game to the config
-    async addGame(appId, name) {
-      if (!appId || isNaN(appId)) return false;
-      
-      // Check if game already exists
-      const existingGame = config.games.find(game => game.appId === appId);
-      if (existingGame) {
-        console.log(`Game with AppID ${appId} already exists as "${existingGame.name}".`);
-        return false;
-      }
-      
-      config.games.push({ appId, name: name || `Game ${appId}` });
-      await this.save();
-      return true;
-    },
-    
-    // Remove a game from the config
-    async removeGame(index) {
-      if (index < 0 || index >= config.games.length) return false;
-      
-      const removed = config.games.splice(index, 1)[0];
-      await this.save();
-      return removed;
-    },
-    
-    // Update account settings
-    async updateAccount(accountName, password, rememberPassword, sharedSecret) {
-      config.accountName = accountName;
-      config.rememberPassword = rememberPassword;
-      
-      if (rememberPassword) {
-        config.password = password;
-      } else {
-        config.password = '';
-      }
-      
-      if (sharedSecret !== undefined) {
-        config.sharedSecret = sharedSecret;
-      }
-      
-      await this.save();
-      return true;
-    },
-    
-    // Get list of available presets
-    async getPresets() {
-      try {
-        const files = await fs.readdir(PRESETS_DIR);
-        const presetFiles = files.filter(file => file.endsWith('.json'));
-        
-        const presets = [];
-        
-        for (const file of presetFiles) {
-          try {
-            const data = await fs.readFile(path.join(PRESETS_DIR, file), 'utf8');
-            const preset = JSON.parse(data);
-            presets.push({
-              id: file.replace('.json', ''),
-              name: preset.name || file.replace('.json', ''),
-              accountName: preset.accountName || 'Unknown'
-            });
-          } catch (err) {
-            console.error(`Error reading preset ${file}:`, err);
-          }
-        }
-        
-        return presets;
-      } catch (err) {
-        console.error('Error listing presets:', err);
-        return [];
-      }
-    },
-    
-    // Save current config as a preset
-    async saveAsPreset(presetId, presetName) {
-      if (!presetId || !presetName) return false;
-      
-      try {
-        // Create a copy of the current config
-        const presetConfig = { 
-          ...config,
-          name: presetName
-        };
-        
-        const presetPath = path.join(PRESETS_DIR, `${presetId}.json`);
-        await fs.writeFile(presetPath, JSON.stringify(presetConfig, null, 2));
-        
-        currentPreset = presetId;
-        console.log(`Saved preset "${presetName}" as ${presetId}.json`);
-        return true;
-      } catch (err) {
-        console.error('Failed to save preset:', err);
-        return false;
-      }
-    },
-    
-    // Save current user-config.json as a preset
-    async saveCurrentConfigAsPreset(presetId, presetName) {
-      if (!presetId || !presetName) return false;
-      
-      try {
-        // Read the current user-config.json
-        if (!existsSync(CONFIG_PATH)) {
-          console.error('No configuration file found.');
-          return false;
-        }
-        
-        const data = await fs.readFile(CONFIG_PATH, 'utf8');
-        const currentConfig = JSON.parse(data);
-        
-        // Add the preset name
-        currentConfig.name = presetName;
-        
-        const presetPath = path.join(PRESETS_DIR, `${presetId}.json`);
-        await fs.writeFile(presetPath, JSON.stringify(currentConfig, null, 2));
-        
-        currentPreset = presetId;
-        console.log(`Saved current config as preset "${presetName}" (${presetId}.json)`);
-        return true;
-      } catch (err) {
-        console.error('Failed to save current config as preset:', err);
-        return false;
-      }
-    },
-    
-    // Load a preset
-    async loadPreset(presetId) {
-      try {
-        const presetPath = path.join(PRESETS_DIR, `${presetId}.json`);
-        
-        if (!existsSync(presetPath)) {
-          console.error(`Preset ${presetId}.json not found.`);
-          return false;
-        }
-        
-        const data = await fs.readFile(presetPath, 'utf8');
-        const presetConfig = JSON.parse(data);
-        
-        // Update the current config with the preset
-        config = { ...defaultConfig, ...presetConfig };
-        currentPreset = presetId;
-        
-        // Save to the main config file as well
-        await this.save();
-        
-        console.log(`Loaded preset: ${config.name}`);
-        console.log(`Account: ${config.accountName}`);
-        console.log(`Games: ${config.games.length}`);
-        
-        return true;
-      } catch (err) {
-        console.error('Failed to load preset:', err);
-        return false;
-      }
-    },
-    
-    // Delete a preset
-    async deletePreset(presetId) {
-      try {
-        const presetPath = path.join(PRESETS_DIR, `${presetId}.json`);
-        
-        if (!existsSync(presetPath)) {
-          console.error(`Preset ${presetId}.json not found.`);
-          return false;
-        }
-        
-        await fs.unlink(presetPath);
-        
-        // If we deleted the current preset, reset the current preset
-        if (currentPreset === presetId) {
-          currentPreset = null;
-        }
-        
-        console.log(`Deleted preset: ${presetId}.json`);
-        return true;
-      } catch (err) {
-        console.error('Failed to delete preset:', err);
-        return false;
-      }
-    },
-    
-    // Get a specific preset
-    async getPreset(presetId) {
-      try {
-        const presetPath = path.join(PRESETS_DIR, `${presetId}.json`);
-        
-        if (!existsSync(presetPath)) {
-          console.error(`Preset ${presetId}.json not found.`);
-          return null;
-        }
-        
-        const data = await fs.readFile(presetPath, 'utf8');
-        return JSON.parse(data);
-      } catch (err) {
-        console.error(`Failed to get preset ${presetId}:`, err);
-        return null;
-      }
-    },
-    
-    // Update a preset
-    async updatePreset(presetId, updatedPreset) {
-      try {
-        const presetPath = path.join(PRESETS_DIR, `${presetId}.json`);
-        
-        if (!existsSync(presetPath)) {
-          console.error(`Preset ${presetId}.json not found.`);
-          return false;
-        }
-        
-        await fs.writeFile(presetPath, JSON.stringify(updatedPreset, null, 2));
-        
-        console.log(`Updated preset: ${presetId}.json`);
-        
-        // If this is the current preset, update the current config
-        if (currentPreset === presetId) {
-          config = { ...defaultConfig, ...updatedPreset };
-          await this.save();
-        }
-        
-        return true;
-      } catch (err) {
-        console.error(`Failed to update preset ${presetId}:`, err);
-        return false;
-      }
-    },
-    
-    // Get the current preset ID
-    getCurrentPreset() {
-      return currentPreset;
+  // Current configuration
+  let config = { ...defaultConfig }
+
+  // Current preset ID
+  let currentPreset = null
+
+  /**
+   * Ensure a directory exists
+   * @param {string} dir - Directory path
+   */
+  function ensureDirectoryExists(dir) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
     }
-  };
+  }
+
+  /**
+   * Read JSON file safely
+   * @param {string} filePath - Path to JSON file
+   * @param {Object} defaultValue - Default value if file doesn't exist
+   * @returns {Object} Parsed JSON or default value
+   */
+  function readJsonFile(filePath, defaultValue = null) {
+    try {
+      if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, "utf8")
+        return JSON.parse(data)
+      }
+    } catch (err) {
+      console.error(`Error reading ${filePath}:`, err)
+    }
+    return defaultValue
+  }
+
+  /**
+   * Write JSON file safely
+   * @param {string} filePath - Path to JSON file
+   * @param {Object} data - Data to write
+   * @returns {boolean} Success status
+   */
+  function writeJsonFile(filePath, data) {
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8")
+      return true
+    } catch (err) {
+      console.error(`Error writing ${filePath}:`, err)
+      return false
+    }
+  }
+
+  return {
+    /**
+     * Get current configuration
+     * @returns {Object} - Current configuration
+     */
+    get() {
+      return { ...config }
+    },
+
+    /**
+     * Get current preset ID
+     * @returns {string|null} - Current preset ID
+     */
+    getCurrentPreset() {
+      return currentPreset
+    },
+
+    /**
+     * Load configuration from file
+     * @returns {Promise<boolean>} - Success status
+     */
+    async load() {
+      const loadedConfig = readJsonFile(CONFIG_FILE, null)
+
+      if (loadedConfig) {
+        config = loadedConfig
+        console.log("Configuration loaded successfully.")
+        return true
+      } else {
+        console.log("No configuration file found. Using default settings.")
+        await this.save()
+        return false
+      }
+    },
+
+    /**
+     * Save configuration to file
+     * @returns {Promise<boolean>} - Success status
+     */
+    async save() {
+      return writeJsonFile(CONFIG_FILE, config)
+    },
+
+    /**
+     * Update account information
+     * @param {string} accountName - Steam account name
+     * @param {string} password - Steam password
+     * @param {boolean} rememberPassword - Whether to save the password
+     * @param {string} sharedSecret - Steam shared secret for 2FA
+     * @returns {Promise<boolean>} - Success status
+     */
+    async updateAccount(accountName, password, rememberPassword, sharedSecret) {
+      config.accountName = accountName
+      config.sharedSecret = sharedSecret || ""
+      config.rememberPassword = rememberPassword
+
+      if (rememberPassword) {
+        config.password = password
+      } else {
+        config.password = ""
+      }
+
+      return this.save()
+    },
+
+    /**
+     * Add a game to the configuration
+     * @param {number} appId - Steam AppID
+     * @param {string} name - Game name
+     * @returns {Promise<boolean>} - Success status
+     */
+    async addGame(appId, name) {
+      // Check if game already exists
+      const existingIndex = config.games.findIndex((game) => game.appId === appId)
+
+      if (existingIndex !== -1) {
+        console.log(`Game with AppID ${appId} already exists.`)
+        return false
+      }
+
+      config.games.push({
+        appId,
+        name: name || `Game ${appId}`,
+      })
+
+      return this.save()
+    },
+
+    /**
+     * Remove a game from the configuration
+     * @param {number} index - Index of the game to remove
+     * @returns {Promise<Object|boolean>} - Removed game or false if failed
+     */
+    async removeGame(index) {
+      if (index < 0 || index >= config.games.length) {
+        return false
+      }
+
+      const removed = config.games.splice(index, 1)[0]
+      await this.save()
+      return removed
+    },
+
+    /**
+     * Save current configuration as a preset
+     * @param {string} id - Preset ID
+     * @param {string} name - Preset name
+     * @returns {Promise<boolean>} - Success status
+     */
+    async saveAsPreset(id, name) {
+      // Ensure presets directory exists
+      ensureDirectoryExists(PRESETS_DIR)
+
+      const presetPath = path.join(PRESETS_DIR, `${id}.json`)
+
+      // Check if preset already exists
+      if (fs.existsSync(presetPath)) {
+        console.log(`Preset with ID "${id}" already exists.`)
+        return false
+      }
+
+      const preset = {
+        id,
+        name,
+        accountName: config.accountName,
+        sharedSecret: config.sharedSecret,
+        games: [...config.games],
+        rememberPassword: config.rememberPassword,
+        password: config.rememberPassword ? config.password : "",
+      }
+
+      const success = writeJsonFile(presetPath, preset)
+
+      if (success) {
+        console.log(`Preset "${name}" saved successfully.`)
+        // Set as current preset
+        currentPreset = id
+      }
+
+      return success
+    },
+
+    /**
+     * Save current configuration as a preset
+     * @param {string} id - Preset ID
+     * @param {string} name - Preset name
+     * @returns {Promise<boolean>} - Success status
+     */
+    async saveCurrentConfigAsPreset(id, name) {
+      return this.saveAsPreset(id, name)
+    },
+
+    /**
+     * Load a preset
+     * @param {string} id - Preset ID
+     * @returns {Promise<boolean>} - Success status
+     */
+    async loadPreset(id) {
+      const presetPath = path.join(PRESETS_DIR, `${id}.json`)
+      const preset = readJsonFile(presetPath, null)
+
+      if (!preset) {
+        console.log(`Preset with ID "${id}" not found.`)
+        return false
+      }
+
+      // Update configuration
+      config.accountName = preset.accountName || ""
+      config.sharedSecret = preset.sharedSecret || ""
+      config.games = preset.games || []
+      config.rememberPassword = preset.rememberPassword || false
+      config.password = preset.rememberPassword ? preset.password || "" : ""
+
+      // Save to config file
+      const saved = await this.save()
+
+      if (saved) {
+        // Set as current preset
+        currentPreset = id
+        console.log(`Preset "${preset.name}" loaded successfully.`)
+      }
+
+      return saved
+    },
+
+    /**
+     * Get a preset by ID
+     * @param {string} id - Preset ID
+     * @returns {Promise<Object|null>} - Preset object or null if not found
+     */
+    async getPreset(id) {
+      const presetPath = path.join(PRESETS_DIR, `${id}.json`)
+      return readJsonFile(presetPath, null)
+    },
+
+    /**
+     * Update a preset
+     * @param {string} id - Preset ID
+     * @param {Object} preset - Preset object
+     * @returns {Promise<boolean>} - Success status
+     */
+    async updatePreset(id, preset) {
+      const presetPath = path.join(PRESETS_DIR, `${id}.json`)
+
+      if (!fs.existsSync(presetPath)) {
+        console.log(`Preset with ID "${id}" not found.`)
+        return false
+      }
+
+      const success = writeJsonFile(presetPath, preset)
+
+      if (success) {
+        console.log(`Preset "${preset.name}" updated successfully.`)
+      }
+
+      return success
+    },
+
+    /**
+     * Delete a preset
+     * @param {string} id - Preset ID
+     * @returns {Promise<boolean>} - Success status
+     */
+    async deletePreset(id) {
+      const presetPath = path.join(PRESETS_DIR, `${id}.json`)
+
+      if (!fs.existsSync(presetPath)) {
+        console.log(`Preset with ID "${id}" not found.`)
+        return false
+      }
+
+      try {
+        fs.unlinkSync(presetPath)
+        console.log(`Preset "${id}" deleted successfully.`)
+
+        // If this was the current preset, clear it
+        if (currentPreset === id) {
+          currentPreset = null
+        }
+
+        return true
+      } catch (err) {
+        console.error("Error deleting preset:", err)
+        return false
+      }
+    },
+
+    /**
+     * Get all available presets
+     * @returns {Promise<Array>} - Array of preset objects
+     */
+    async getPresets() {
+      // Ensure presets directory exists
+      ensureDirectoryExists(PRESETS_DIR)
+
+      try {
+        const files = fs.readdirSync(PRESETS_DIR)
+        const presets = []
+
+        for (const file of files) {
+          if (file.endsWith(".json")) {
+            const preset = readJsonFile(path.join(PRESETS_DIR, file), null)
+            if (preset) {
+              presets.push(preset)
+            }
+          }
+        }
+
+        return presets
+      } catch (err) {
+        console.error("Error getting presets:", err)
+        return []
+      }
+    },
+  }
 }
