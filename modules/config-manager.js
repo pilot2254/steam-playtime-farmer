@@ -187,7 +187,7 @@ export function createConfigManager() {
       }
 
       const preset = {
-        id,
+        id, // Explicitly set the ID
         name,
         accountName: config.accountName,
         sharedSecret: config.sharedSecret,
@@ -326,8 +326,11 @@ export function createConfigManager() {
 
         for (const file of files) {
           if (file.endsWith(".json")) {
+            const presetId = file.replace(".json", "")
             const preset = readJsonFile(path.join(PRESETS_DIR, file), null)
             if (preset) {
+              // Ensure the ID is set correctly from the filename
+              preset.id = presetId
               presets.push(preset)
             }
           }

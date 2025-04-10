@@ -363,21 +363,6 @@ export function createUserInterface(configManager, steamClient) {
   async function managePresets() {
     console.log("\n===== Preset Management =====")
 
-    // Get list of available presets
-    const presets = await configManager.getPresets()
-    const currentPreset = configManager.getCurrentPreset()
-
-    // Display available presets
-    console.log("Available presets:")
-    if (presets.length === 0) {
-      console.log("No presets found.")
-    } else {
-      presets.forEach((preset, index) => {
-        const current = preset.id === currentPreset ? " (current)" : ""
-        console.log(`${index + 1}. ${preset.name} - Account: ${preset.accountName}${current}`)
-      })
-    }
-
     // Show options
     console.log("\nOptions:")
     console.log("1. Create new preset")
@@ -399,15 +384,21 @@ export function createUserInterface(configManager, steamClient) {
         return managePresets()
 
       case "3":
-        await loadPreset(presets)
+        // Get list of available presets when user wants to load one
+        const loadPresets = await configManager.getPresets()
+        await loadPreset(loadPresets)
         return managePresets()
 
       case "4":
-        await editPresetFromList(presets)
+        // Get list of available presets when user wants to edit one
+        const editPresets = await configManager.getPresets()
+        await editPresetFromList(editPresets)
         return managePresets()
 
       case "5":
-        await deletePreset(presets)
+        // Get list of available presets when user wants to delete one
+        const deletePresets = await configManager.getPresets()
+        await deletePreset(deletePresets)
         return managePresets()
 
       case "6":
@@ -471,7 +462,15 @@ export function createUserInterface(configManager, steamClient) {
       return
     }
 
-    const loadIndex = await question("Enter the number of the preset to load: ")
+    // Display available presets
+    console.log("\nAvailable presets:")
+    const currentPreset = configManager.getCurrentPreset()
+    presets.forEach((preset, index) => {
+      const current = preset.id === currentPreset ? " (current)" : ""
+      console.log(`${index + 1}. ${preset.name} - Account: ${preset.accountName}${current} (ID: ${preset.id})`)
+    })
+
+    const loadIndex = await question("\nEnter the number of the preset to load: ")
     const loadIdx = Number.parseInt(loadIndex) - 1
 
     if (loadIdx >= 0 && loadIdx < presets.length) {
@@ -481,10 +480,13 @@ export function createUserInterface(configManager, steamClient) {
         steamClient.stopFarming()
       }
 
-      const loaded = await configManager.loadPreset(presets[loadIdx].id)
+      const selectedPreset = presets[loadIdx]
+      console.log(`Selected preset: ${selectedPreset.name} with ID: ${selectedPreset.id}`)
+
+      const loaded = await configManager.loadPreset(selectedPreset.id)
 
       if (loaded) {
-        console.log(`Preset "${presets[loadIdx].name}" loaded successfully.`)
+        console.log(`Preset "${selectedPreset.name}" loaded successfully.`)
         console.log("You will need to start farming again with the new preset.")
       }
     } else {
@@ -502,11 +504,21 @@ export function createUserInterface(configManager, steamClient) {
       return
     }
 
-    const editIndex = await question("Enter the number of the preset to edit: ")
+    // Display available presets
+    console.log("\nAvailable presets:")
+    const currentPreset = configManager.getCurrentPreset()
+    presets.forEach((preset, index) => {
+      const current = preset.id === currentPreset ? " (current)" : ""
+      console.log(`${index + 1}. ${preset.name} - Account: ${preset.accountName}${current} (ID: ${preset.id})`)
+    })
+
+    const editIndex = await question("\nEnter the number of the preset to edit: ")
     const editIdx = Number.parseInt(editIndex) - 1
 
     if (editIdx >= 0 && editIdx < presets.length) {
-      await editPreset(presets[editIdx].id)
+      const selectedPreset = presets[editIdx]
+      console.log(`Selected preset: ${selectedPreset.name} with ID: ${selectedPreset.id}`)
+      await editPreset(selectedPreset.id)
     } else {
       console.log("Invalid preset number.")
     }
@@ -522,14 +534,25 @@ export function createUserInterface(configManager, steamClient) {
       return
     }
 
-    const deleteIndex = await question("Enter the number of the preset to delete: ")
+    // Display available presets
+    console.log("\nAvailable presets:")
+    const currentPreset = configManager.getCurrentPreset()
+    presets.forEach((preset, index) => {
+      const current = preset.id === currentPreset ? " (current)" : ""
+      console.log(`${index + 1}. ${preset.name} - Account: ${preset.accountName}${current} (ID: ${preset.id})`)
+    })
+
+    const deleteIndex = await question("\nEnter the number of the preset to delete: ")
     const deleteIdx = Number.parseInt(deleteIndex) - 1
 
     if (deleteIdx >= 0 && deleteIdx < presets.length) {
-      const confirm = await question(`Are you sure you want to delete preset "${presets[deleteIdx].name}"? (yes/no): `)
+      const selectedPreset = presets[deleteIdx]
+      console.log(`Selected preset: ${selectedPreset.name} with ID: ${selectedPreset.id}`)
+
+      const confirm = await question(`Are you sure you want to delete preset "${selectedPreset.name}"? (yes/no): `)
 
       if (confirm.toLowerCase().startsWith("y")) {
-        await configManager.deletePreset(presets[deleteIdx].id)
+        await configManager.deletePreset(selectedPreset.id)
       }
     } else {
       console.log("Invalid preset number.")
