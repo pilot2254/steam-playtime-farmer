@@ -23,6 +23,20 @@ export function createUserInterface(configManager, steamClient) {
   const menuManager = createMenuManager(rl)
 
   /**
+   * Clear the console
+   * Uses a cross-platform approach to clear the terminal
+   */
+  function clearConsole() {
+    // Clear the console using ANSI escape codes (works on most terminals)
+    process.stdout.write("\x1Bc")
+
+    // Alternative method for Windows command prompt
+    if (process.platform === "win32") {
+      console.clear()
+    }
+  }
+
+  /**
    * Ask a question and get response
    * @param {string} query - The question to ask
    * @returns {Promise<string>} - User's response
@@ -35,6 +49,7 @@ export function createUserInterface(configManager, steamClient) {
    * Setup Steam account
    */
   async function setupAccount() {
+    clearConsole()
     console.log("\n===== Account Setup =====")
 
     // Get account details
@@ -67,6 +82,7 @@ export function createUserInterface(configManager, steamClient) {
    * Manage games menu
    */
   async function manageGames() {
+    clearConsole()
     const config = configManager.get()
 
     console.log("\n===== Game Management =====")
@@ -167,6 +183,7 @@ export function createUserInterface(configManager, steamClient) {
    * @returns {Promise<boolean>} - True if editing was successful
    */
   async function editPreset(presetId) {
+    clearConsole()
     const preset = await configManager.getPreset(presetId)
 
     if (!preset) {
@@ -221,6 +238,7 @@ export function createUserInterface(configManager, steamClient) {
    * @returns {Promise<boolean>} - True if editing was successful
    */
   async function editPresetGames(presetId, preset) {
+    clearConsole()
     console.log("\n===== Edit Games in Preset =====")
 
     // Display current games in preset
@@ -361,6 +379,7 @@ export function createUserInterface(configManager, steamClient) {
    * Manage presets menu
    */
   async function managePresets() {
+    clearConsole()
     console.log("\n===== Preset Management =====")
 
     // Show options
@@ -414,6 +433,9 @@ export function createUserInterface(configManager, steamClient) {
    * Create a new preset
    */
   async function createNewPreset() {
+    clearConsole()
+    console.log("\n===== Create New Preset =====")
+
     const presetId = await question("Enter preset ID (letters, numbers, hyphens only): ")
 
     if (!/^[a-zA-Z0-9-]+$/.test(presetId)) {
@@ -435,6 +457,9 @@ export function createUserInterface(configManager, steamClient) {
    * Save current configuration as a preset
    */
   async function saveCurrentConfigAsPreset() {
+    clearConsole()
+    console.log("\n===== Save Current Config as Preset =====")
+
     const presetId = await question("Enter preset ID (letters, numbers, hyphens only): ")
 
     if (!/^[a-zA-Z0-9-]+$/.test(presetId)) {
@@ -457,12 +482,14 @@ export function createUserInterface(configManager, steamClient) {
    * @param {Array} presets - List of available presets
    */
   async function loadPreset(presets) {
+    clearConsole()
     if (presets.length === 0) {
       console.log("No presets available to load.")
       return
     }
 
     // Display available presets
+    console.log("\n===== Load Preset =====")
     console.log("\nAvailable presets:")
     const currentPreset = configManager.getCurrentPreset()
     presets.forEach((preset, index) => {
@@ -499,12 +526,14 @@ export function createUserInterface(configManager, steamClient) {
    * @param {Array} presets - List of available presets
    */
   async function editPresetFromList(presets) {
+    clearConsole()
     if (presets.length === 0) {
       console.log("No presets available to edit.")
       return
     }
 
     // Display available presets
+    console.log("\n===== Edit Preset =====")
     console.log("\nAvailable presets:")
     const currentPreset = configManager.getCurrentPreset()
     presets.forEach((preset, index) => {
@@ -529,12 +558,14 @@ export function createUserInterface(configManager, steamClient) {
    * @param {Array} presets - List of available presets
    */
   async function deletePreset(presets) {
+    clearConsole()
     if (presets.length === 0) {
       console.log("No presets available to delete.")
       return
     }
 
     // Display available presets
+    console.log("\n===== Delete Preset =====")
     console.log("\nAvailable presets:")
     const currentPreset = configManager.getCurrentPreset()
     presets.forEach((preset, index) => {
@@ -563,6 +594,7 @@ export function createUserInterface(configManager, steamClient) {
    * Start farming games
    */
   async function startFarming() {
+    clearConsole()
     const config = configManager.get()
 
     // Check if we have games to farm
@@ -660,10 +692,11 @@ export function createUserInterface(configManager, steamClient) {
    * Show farming interface with available commands
    */
   function showFarmingInterface() {
+    clearConsole()
     const config = configManager.get()
 
     // Display farming status and commands
-    console.log("\nPlaytime farming is now active.")
+    console.log("\n===== Playtime Farming Active =====")
     console.log('Type "status" to check current status.')
     console.log('Type "add" to add a new game while farming.')
     console.log('Type "remove" to remove a game while farming.')
@@ -702,6 +735,11 @@ export function createUserInterface(configManager, steamClient) {
           break
         case "help":
           handleHelpCommand()
+          break
+        case "clear":
+          clearConsole()
+          console.log("\n===== Playtime Farming Active =====")
+          console.log('Type "help" to see all available commands.')
           break
         default:
           console.log('Unknown command. Type "help" to see available commands.')
@@ -753,6 +791,7 @@ export function createUserInterface(configManager, steamClient) {
    * Handle add game command
    */
   async function handleAddGameCommand() {
+    clearConsole()
     console.log("\n===== Add Game While Farming =====")
     const appIdInput = await question("Enter game AppID (number): ")
     const appId = Number.parseInt(appIdInput)
@@ -776,6 +815,7 @@ export function createUserInterface(configManager, steamClient) {
    * @param {Object} config - Current configuration
    */
   async function handleRemoveGameCommand(config) {
+    clearConsole()
     console.log("\n===== Remove Game While Farming =====")
     console.log("Current games:")
 
@@ -825,6 +865,7 @@ export function createUserInterface(configManager, steamClient) {
     console.log("- remove: Remove a game from farming without stopping")
     console.log("- reconnect: Manually attempt to reconnect if disconnected")
     console.log("- debug: Show detailed Steam client status")
+    console.log("- clear: Clear the console")
     console.log("- stop: Stop farming and return to main menu")
     console.log("- help: Show this help message")
   }
@@ -833,6 +874,7 @@ export function createUserInterface(configManager, steamClient) {
    * Show main menu
    */
   async function showMainMenu() {
+    clearConsole()
     console.log(`\n===== ${appConfig.appName} v${appConfig.version} =====`)
     console.log("1. Setup Account")
     console.log("2. Manage Games")
