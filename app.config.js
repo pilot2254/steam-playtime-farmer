@@ -16,7 +16,7 @@ export const appConfig = {
   appName: "Steam Playtime Farmer",
 
   // Application version
-  version: "0.1.5",
+  version: "0.1.6",
 
   // File paths
   paths: {
