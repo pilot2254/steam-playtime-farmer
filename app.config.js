@@ -2,8 +2,6 @@
  * Steam Playtime Farmer Configuration
  * This file contains all application-wide configuration settings
  */
-
-// File system paths
 import path from "path"
 import { fileURLToPath } from "url"
 
@@ -14,60 +12,42 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const appConfig = {
   // Application name displayed in the console
   appName: "Steam Playtime Farmer",
-
+  
   // Application version
-  version: "0.1.6",
-
-  // File paths
+  version: "0.1.7",
+  
+  // File paths for various application data
   paths: {
-    // Directory for storing presets
-    presetsDir: path.join(__dirname, "presets"),
-
-    // User configuration file
-    configFile: path.join(__dirname, "user-config.json"),
-
-    // Session data file
-    sessionFile: path.join(__dirname, "steam-session.dat"),
+    presetsDir: path.join(__dirname, "presets"),     // Directory for storing presets
+    configFile: path.join(__dirname, "user-config.json"), // User configuration file
+    sessionFile: path.join(__dirname, "steam-session.dat"), // Session data file
   },
-
+  
   // Steam client settings
   steam: {
     // Reconnection settings
     reconnect: {
-      // Maximum number of reconnection attempts
-      maxAttempts: 10,
-
-      // Initial delay between reconnection attempts (ms)
-      initialDelay: 3000,
-
-      // Maximum delay between reconnection attempts (ms)
-      maxDelay: 60000,
-
-      // Multiplier for exponential backoff
-      backoffMultiplier: 1.5,
+      maxAttempts: 10,           // Maximum number of reconnection attempts
+      initialDelay: 3000,        // Initial delay between reconnection attempts (ms)
+      maxDelay: 60000,           // Maximum delay between reconnection attempts (ms)
+      backoffMultiplier: 1.5,    // Multiplier for exponential backoff
     },
-
+    
     // Steam client options
     client: {
-      // Whether to prompt for Steam Guard code
-      promptSteamGuardCode: false,
-
-      // Whether to automatically relogin
-      autoRelogin: true,
+      promptSteamGuardCode: false, // Whether to prompt for Steam Guard code
+      autoRelogin: false,          // Whether to automatically relogin
     },
   },
-
-  // Name of the configuration file that stores user settings
-  configFileName: "user-config.json",
 }
 
 // Default user configuration (will be saved to configFileName)
 export const defaultConfig = {
-  accountName: "",
-  sharedSecret: "",
-  games: [],
-  rememberPassword: false,
-  password: "",
+  accountName: "",       // Steam account name
+  sharedSecret: "",      // Steam shared secret for 2FA
+  games: [],             // List of games to farm
+  rememberPassword: false, // Whether to remember the password
+  password: "",          // Stored password (if rememberPassword is true)
 }
 
 export default { appConfig, defaultConfig }

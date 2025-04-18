@@ -65,9 +65,16 @@
     {
       "appId": 1468260,
       "name": "Leaf Blower Revolution"
+    },
+    {
+      "appId": 3241660,
+      "name": "REPO"
+    },
+    {
+      "appId": 471710,
+      "name": "Rec Room"
     }
   ],
   "rememberPassword": true,
-  "password": "",
-  "name": "pilot2254"
+  "password": ""
 }

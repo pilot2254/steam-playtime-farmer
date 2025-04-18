@@ -27,9 +27,9 @@ export function createSteamClient() {
   })
 
   // Create managers
-  const sessionManager = createSessionManager()
-  const connectionManager = createConnectionManager()
-  const eventManager = createEventManager()
+  const sessionManager = createSessionManager() // Handles session persistence
+  const connectionManager = createConnectionManager() // Handles reconnection logic
+  const eventManager = createEventManager() // Handles event subscriptions
 
   // State variables
   let isFarming = false // Whether we're currently farming games
@@ -94,7 +94,6 @@ export function createSteamClient() {
     // Fix for undefined username issue - get name from multiple possible sources
     const accountName = client.accountInfo?.name || lastLoginDetails?.accountName || "Unknown"
     connectionManager.setAccountName(accountName)
-
     console.log(`Successfully logged in as ${accountName}`)
 
     // Save session data for future reconnections
@@ -165,8 +164,14 @@ export function createSteamClient() {
    * @param {Error} err - Error object
    */
   function handleError(err) {
-    console.error("Steam client error:", err)
-    eventManager.trigger("error", err)
+    // Pass the full error object including Steam error codes
+    const errorDetails = {
+      message: err.message || "Unknown error",
+      eresult: err.eresult, // Steam error code
+      cause: err.cause || "Unknown cause",
+    }
+    console.error("Steam client error:", errorDetails.message)
+    eventManager.trigger("error", errorDetails)
   }
 
   /**
@@ -296,11 +301,7 @@ export function createSteamClient() {
    */
   function login(accountName, password, sharedSecret) {
     // Store login details for potential reconnection
-    lastLoginDetails = {
-      accountName,
-      password,
-      sharedSecret,
-    }
+    lastLoginDetails = { accountName, password, sharedSecret }
 
     // Setup events before login
     setupEvents()
@@ -409,9 +410,7 @@ export function createSteamClient() {
 
       if (client.steamID) {
         console.log("Starting to farm games...")
-        setTimeout(() => {
-          updateGamesPlayed()
-        }, 1000)
+        setTimeout(() => updateGamesPlayed(), 1000)
         return true
       } else {
         console.error("Not logged in to Steam. Cannot start farming.")
@@ -482,7 +481,6 @@ export function createSteamClient() {
      */
     updateGames: (gameIds) => {
       if (!Array.isArray(gameIds)) return false
-
       currentGames = gameIds.map((id) => Number.parseInt(id)).filter((id) => !isNaN(id))
       return updateGamesPlayed()
     },

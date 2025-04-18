@@ -1,0 +1,16 @@
+{
+  "accountName": "",
+  "sharedSecret": "",
+  "games": [
+    {
+      "appId": 730,
+      "name": "CS2"
+    },
+    {
+      "appId": 714010,
+      "name": "AimLabs"
+    }
+  ],
+  "rememberPassword": false,
+  "password": ""
+}
