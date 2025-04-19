@@ -1,6 +1,9 @@
-# Main Steam Playtime Farmer files
+# Steam Playtime Farmer files
 user-config.json
+cellid-*.txt
 cm_list.json
+machineAuthToken.*.txt
+steam-session.dat
 
 # Logs
 logs

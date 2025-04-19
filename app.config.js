@@ -14,12 +14,12 @@ export const appConfig = {
   appName: "Steam Playtime Farmer",
   
   // Application version
-  version: "0.1.8",
+  version: "0.1.9",
   
   // File paths for various application data
   paths: {
-    presetsDir: path.join(__dirname, "presets"),     // Directory for storing presets
-    configFile: path.join(__dirname, "user-config.json"), // User configuration file
+    presetsDir: path.join(__dirname, "presets"),            // Directory for storing presets
+    configFile: path.join(__dirname, "user-config.json"),   // User configuration file
     sessionFile: path.join(__dirname, "steam-session.dat"), // Session data file
   },
   
@@ -43,11 +43,11 @@ export const appConfig = {
 
 // Default user configuration (will be saved to configFileName)
 export const defaultConfig = {
-  accountName: "",       // Steam account name
-  sharedSecret: "",      // Steam shared secret for 2FA
-  games: [],             // List of games to farm
+  accountName: "",         // Steam account name
+  sharedSecret: "",        // Steam shared secret for 2FA
+  games: [],               // List of games to farm
   rememberPassword: false, // Whether to remember the password
-  password: "",          // Stored password (if rememberPassword is true)
+  password: "",            // Stored password (if rememberPassword is true)
 }
 
 export default { appConfig, defaultConfig }

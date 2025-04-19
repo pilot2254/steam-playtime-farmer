@@ -17,12 +17,12 @@ const PRESETS_DIR = appConfig.paths.presetsDir
 export function createConfigManager() {
   // Current configuration
   let config = { ...defaultConfig }
-  
+
   // Current preset ID
   let currentPreset = null
 
   // Helper functions for file operations
-  
+
   /**
    * Ensure a directory exists
    * @param {string} dir - Directory path
@@ -159,7 +159,8 @@ export function createConfigManager() {
       config.sharedSecret = preset.sharedSecret || ""
       config.games = preset.games || []
       config.rememberPassword = preset.rememberPassword || false
-      config.password = preset.rememberPassword ? preset.password || "" : ""
+      // Only set password if rememberPassword is true and password exists
+      config.password = preset.rememberPassword && preset.password ? preset.password : ""
 
       // Save to config file
       const saved = await this.save()
@@ -187,7 +188,7 @@ export function createConfigManager() {
       try {
         fs.unlinkSync(presetPath)
         console.log(`Preset "${id}" deleted successfully.`)
-        
+
         // If this was the current preset, clear it
         if (currentPreset === id) currentPreset = null
         return true

@@ -21,7 +21,7 @@ export function createUserInterface(configManager, steamClient) {
   let isFarming = false // Whether we're currently farming games
 
   // Helper functions for UI operations
-  
+
   /**
    * Clear the console screen
    */
@@ -140,7 +140,9 @@ export function createUserInterface(configManager, steamClient) {
 
     // Get password - either from saved config or user input
     const password =
-      config.rememberPassword && config.password ? config.password : await question("Enter your Steam password: ")
+      config.rememberPassword && config.password && config.password.length > 0
+        ? config.password
+        : await question("Enter your Steam password: ")
 
     // Attempt to login to Steam
     console.log(`Attempting to login as ${config.accountName}...`)
@@ -438,7 +440,7 @@ export function createUserInterface(configManager, steamClient) {
 
   // Return the public API
   return {
-    start: showMainMenu,  // Start the user interface
+    start: showMainMenu, // Start the user interface
     close: () => rl.close(), // Close the readline interface
   }
 }
