@@ -53,6 +53,26 @@ export function createEventManager() {
     },
 
     /**
+     * Clear multiple event handlers or all events if no specific events provided
+     * @param {...string} events - Event names to clear or empty to clear all
+     */
+    clearAll(...events) {
+      if (events.length === 0) {
+        // Clear all events if no specific events were provided
+        Object.keys(eventHandlers).forEach((event) => {
+          eventHandlers[event] = []
+        })
+      } else {
+        // Clear only the specified events
+        events.forEach((event) => {
+          if (eventHandlers[event]) {
+            eventHandlers[event] = []
+          }
+        })
+      }
+    },
+
+    /**
      * Check if an event has any handlers
      * @param {string} event - Event name
      * @returns {boolean} True if event has handlers

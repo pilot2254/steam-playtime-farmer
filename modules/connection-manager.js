@@ -156,9 +156,24 @@ export function createConnectionManager() {
     },
 
     /**
+     * Stop any ongoing reconnection attempts
+     */
+    stopReconnect() {
+      if (connectionState.reconnecting && connectionState.reconnectFunc) {
+        console.log("Stopping reconnection attempts...")
+        connectionState.reconnecting = false
+        connectionState.reconnectAttempts = 0
+        connectionState.reconnectFunc = null
+      }
+    },
+
+    /**
      * Reset connection state
      */
     reset() {
+      // Stop any ongoing reconnection first
+      this.stopReconnect()
+
       connectionState = {
         connected: false,
         reconnecting: false,

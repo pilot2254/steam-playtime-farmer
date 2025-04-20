@@ -198,6 +198,10 @@ export function createUserInterface(configManager, steamClient) {
             console.log("Stopping farming...")
             steamClient.stopFarming()
             isFarming = false
+
+            // Remove all event listeners to prevent reconnection attempts
+            steamClient.clearAllHandlers("disconnected", "reconnecting", "reconnected", "reconnectFailed")
+
             return showMainMenu()
 
           case "help":

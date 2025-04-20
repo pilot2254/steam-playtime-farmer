@@ -222,6 +222,12 @@ export function createSteamClient() {
    * @returns {boolean} - True if reconnection attempt was started
    */
   function reconnect() {
+    // Don't reconnect if we're not farming anymore
+    if (!isFarming) {
+      console.log("Farming stopped, not attempting to reconnect.")
+      return false
+    }
+
     // Try to use saved session first
     const sessionData = sessionManager.loadSession()
 
@@ -396,6 +402,12 @@ export function createSteamClient() {
     clearHandlers: (event) => eventManager.clear(event),
 
     /**
+     * Clear all or specified event handlers
+     * @param {...string} events - Optional event names to clear
+     */
+    clearAllHandlers: (...events) => eventManager.clearAll(...events),
+
+    /**
      * Start farming games
      * @param {Array<number>} gameIds - Array of game IDs to farm
      * @returns {boolean} - True if farming started successfully
@@ -423,6 +435,9 @@ export function createSteamClient() {
      * @returns {boolean} - True if farming stopped successfully
      */
     stopFarming: () => {
+      // Clear any reconnection attempts first
+      connectionManager.reset()
+
       if (client.steamID) {
         try {
           console.log("Stopping game farming...")
