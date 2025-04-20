@@ -53,7 +53,7 @@ This application runs on Node.js, which you'll need to install first:
 
 ### Step 2: Download Steam Playtime Farmer
 
-1. Download the latest release from [the releases page](https://github.com/yourusername/steam-playtime-farmer/releases)
+1. Download the latest release from [the releases page](https://github.com/pilot2254/steam-playtime-farmer/releases)
 2. Extract the ZIP file to a folder on your computer
 
 
@@ -164,17 +164,21 @@ For automatic 2FA code generation:
 
 ```plaintext
 steam-playtime-farmer/
-├── main.js                 # Entry point
-├── app.config.js           # Application configuration
+├── .gitignore
+├── package.json
+├── package-lock.json
 ├── modules/
-│   ├── steam-client.js     # Steam client functionality
-│   ├── config-manager.js   # Configuration management
-│   ├── user-interface.js   # Command-line interface
-│   ├── session-manager.js  # Session persistence
-│   ├── connection-manager.js # Connection handling
-│   └── event-manager.js    # Event system
-├── presets/                # Saved presets (JSON files)
-└── user-config.json        # User configuration
+│   ├── config-manager.js
+│   ├── connection-manager.js
+│   ├── event-manager.js
+│   ├── session-manager.js
+│   ├── steam-client.js
+│   └── user-interface.js
+├── presets/
+├── app.config.js
+├── main.js
+├── LICENSE
+└── README.md
 ```
 
 ### Key Components
@@ -200,7 +204,7 @@ steam-playtime-farmer/
 
 ```shellscript
 # Clone the repository
-git clone https://github.com/yourusername/steam-playtime-farmer.git
+git clone https://github.com/pilot2254/steam-playtime-farmer.git
 
 # Navigate to the directory
 cd steam-playtime-farmer
