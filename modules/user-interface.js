@@ -241,7 +241,9 @@ export function createUserInterface(configManager, steamClient) {
     // Display available presets
     console.log("Available presets:")
     presets.forEach((preset, i) =>
-      console.log(`${i + 1}. ${preset.name} (${preset.games.length} games) - Account: ${preset.accountName}`),
+      console.log(
+        `${i + 1}. ${preset.name || preset.id} (${preset.games.length} games) - Account: ${preset.accountName || "Not set"}`,
+      ),
     )
 
     // Get user selection
@@ -259,7 +261,7 @@ export function createUserInterface(configManager, steamClient) {
 
     // Load the selected preset
     const preset = presets[idx]
-    console.log(`Loading preset: ${preset.name}...`)
+    console.log(`Loading preset: ${preset.name || preset.id}...`)
 
     try {
       const success = await configManager.loadPreset(preset.id)
@@ -348,7 +350,9 @@ export function createUserInterface(configManager, steamClient) {
     // Display available presets
     console.log("Available presets:")
     presets.forEach((preset, i) =>
-      console.log(`${i + 1}. ${preset.name} (${preset.games.length} games) - Account: ${preset.accountName}`),
+      console.log(
+        `${i + 1}. ${preset.name || preset.id} (${preset.games.length} games) - Account: ${preset.accountName || "Not set"}`,
+      ),
     )
 
     // Get user selection
@@ -366,12 +370,12 @@ export function createUserInterface(configManager, steamClient) {
 
     // Confirm deletion
     const preset = presets[idx]
-    const confirm = await question(`Are you sure you want to delete "${preset.name}"? (yes/no): `)
+    const confirm = await question(`Are you sure you want to delete "${preset.name || preset.id}"? (yes/no): `)
 
     if (confirm.toLowerCase().startsWith("y")) {
       try {
         const success = await configManager.deletePreset(preset.id)
-        console.log(success ? `Preset "${preset.name}" deleted.` : "Failed to delete preset.")
+        console.log(success ? `Preset "${preset.name || preset.id}" deleted.` : "Failed to delete preset.")
       } catch (err) {
         console.error("Error deleting preset:", err)
       }

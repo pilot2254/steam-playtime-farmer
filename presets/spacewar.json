@@ -1,12 +1,13 @@
 {
-    "accountName": "",
-    "sharedSecret": "",
-    "games": [
-      {
-        "appId": 480,
-        "name": "Spacewar"
-      }
-    ],
-    "rememberPassword": true,
-    "password": ""
-  }
+  "accountName": "",
+  "sharedSecret": "",
+  "games": [
+    {
+      "appId": 480,
+      "name": "Spacewar"
+    }
+  ],
+  "rememberPassword": true,
+  "password": "",
+  "name": "spacewar"
+}

@@ -15,7 +15,7 @@ if (!existsSync(appConfig.paths.presetsDir)) {
 
 // Initialize core modules
 const configManager = createConfigManager() // Handles configuration and presets
-const steamClient = createSteamClient()      // Handles Steam connection and game farming
+const steamClient = createSteamClient() // Handles Steam connection and game farming
 const ui = createUserInterface(configManager, steamClient) // Handles user interaction
 
 // Configure reconnection settings from app config
@@ -27,6 +27,13 @@ steamClient.configureReconnect({
 // Display application header
 console.log(`===== ${appConfig.appName} v${appConfig.version} =====`)
 console.log(`Automatic reconnection enabled (max ${appConfig.steam.reconnect.maxAttempts} attempts)`)
+
+// Fix existing presets that might be missing the name field
+configManager.fixPresets().then((fixedCount) => {
+  if (fixedCount > 0) {
+    console.log(`Fixed ${fixedCount} presets with missing names.`)
+  }
+})
 
 // Load saved configuration and start the UI
 configManager

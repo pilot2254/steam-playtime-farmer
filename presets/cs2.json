@@ -1,12 +1,13 @@
 {
-    "accountName": "",
-    "sharedSecret": "",
-    "games": [
-      {
-        "appId": 730,
-        "name": "CS2"
-      }
-    ],
-    "rememberPassword": true,
-    "password": ""
-  }
+  "accountName": "",
+  "sharedSecret": "",
+  "games": [
+    {
+      "appId": 730,
+      "name": "CS2"
+    }
+  ],
+  "rememberPassword": true,
+  "password": "",
+  "name": "cs2"
+}

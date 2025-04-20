@@ -167,7 +167,7 @@ export function createConfigManager() {
       if (saved) {
         // Set as current preset
         currentPreset = id
-        console.log(`Preset "${preset.name}" loaded successfully.`)
+        console.log(`Preset "${preset.name || id}" loaded successfully.`)
       }
       return saved
     },
@@ -215,6 +215,12 @@ export function createConfigManager() {
             if (preset) {
               // Ensure the ID is set correctly from the filename
               preset.id = presetId
+
+              // If name is missing, use the ID as the name
+              if (!preset.name) {
+                preset.name = presetId
+              }
+
               presets.push(preset)
             }
           }
@@ -223,6 +229,38 @@ export function createConfigManager() {
       } catch (err) {
         console.error("Error getting presets:", err)
         return []
+      }
+    },
+
+    /**
+     * Fix existing presets by adding missing name field
+     * @returns {Promise<number>} - Number of presets fixed
+     */
+    async fixPresets() {
+      ensureDir(PRESETS_DIR)
+      try {
+        const files = fs.readdirSync(PRESETS_DIR)
+        let fixedCount = 0
+
+        for (const file of files) {
+          if (file.endsWith(".json")) {
+            const presetId = file.replace(".json", "")
+            const presetPath = path.join(PRESETS_DIR, file)
+            const preset = readJson(presetPath, null)
+
+            if (preset && !preset.name) {
+              preset.name = presetId
+              if (writeJson(presetPath, preset)) {
+                fixedCount++
+              }
+            }
+          }
+        }
+
+        return fixedCount
+      } catch (err) {
+        console.error("Error fixing presets:", err)
+        return 0
       }
     },
 
