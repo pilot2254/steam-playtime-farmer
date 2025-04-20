@@ -1,0 +1,12 @@
+{
+    "accountName": "",
+    "sharedSecret": "",
+    "games": [
+      {
+        "appId": 730,
+        "name": "CS2"
+      }
+    ],
+    "rememberPassword": true,
+    "password": ""
+  }

@@ -3,20 +3,16 @@
   "sharedSecret": "",
   "games": [
     {
-      "appId": 221410,
-      "name": "Steam for Linux"
-    },
-    {
       "appId": 730,
       "name": "CS2"
     },
     {
-      "appId": 365670,
-      "name": "Blender"
-    },
-    {
       "appId": 714010,
       "name": "AimLabs"
+    },
+    {
+      "appId": 480,
+      "name": "Spacewar"
     }
   ],
   "rememberPassword": true,

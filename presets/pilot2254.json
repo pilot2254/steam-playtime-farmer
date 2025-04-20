@@ -15,10 +15,6 @@
       "name": "Satisfactory"
     },
     {
-      "appId": 105600,
-      "name": "Terraria"
-    },
-    {
       "appId": 359550,
       "name": "Rainbow Six"
     },
@@ -31,20 +27,12 @@
       "name": "GTFO"
     },
     {
-      "appId": 365670,
-      "name": "Blender"
-    },
-    {
       "appId": 271590,
       "name": "GTA V"
     },
     {
       "appId": 1905180,
       "name": "OBS Studio"
-    },
-    {
-      "appId": 280680,
-      "name": "Krita"
     },
     {
       "appId": 2200,
@@ -59,20 +47,12 @@
       "name": "Sons of the Forest"
     },
     {
-      "appId": 431730,
-      "name": "Aseprite"
-    },
-    {
       "appId": 1468260,
       "name": "Leaf Blower Revolution"
     },
     {
       "appId": 3241660,
       "name": "REPO"
-    },
-    {
-      "appId": 471710,
-      "name": "Rec Room"
     }
   ],
   "rememberPassword": true,
