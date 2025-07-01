@@ -6,8 +6,8 @@ export interface SteamGame {
 
 export interface SteamLoginDetails {
   accountName: string;
-  password?: string;
-  sharedSecret?: string;
+  password?: string | undefined;
+  sharedSecret?: string | undefined;
 }
 
 export interface SteamStatus {
