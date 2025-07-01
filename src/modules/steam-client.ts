@@ -179,24 +179,6 @@ export function createSteamClient() {
       return false;
     }
 
-    // Try to use saved session first
-    const sessionData = sessionManager.loadSession();
-
-    if (sessionData && sessionData.sessionKey) {
-      try {
-        console.log('Reconnecting using saved session...');
-        client.logOn({
-          accountName: sessionData.accountName || lastLoginDetails?.accountName || '',
-          sessionKey: Buffer.from(sessionData.sessionKey, 'hex'),
-        });
-        return true;
-      } catch (err) {
-        console.error('Failed to reconnect with saved session:', err);
-        // Clear invalid session data
-        sessionManager.clearSession();
-      }
-    }
-
     // Fall back to credentials if available
     if (lastLoginDetails) {
       console.log('Reconnecting using credentials...');
@@ -204,7 +186,7 @@ export function createSteamClient() {
       return true;
     }
 
-    console.log('No session or credentials available for reconnection.');
+    console.log('No credentials available for reconnection.');
     return false;
   }
 
@@ -264,20 +246,8 @@ export function createSteamClient() {
       rememberPassword: true,
     };
 
-    // Try to use saved session first if we're not explicitly logging in with credentials
-    const sessionData = sessionManager.loadSession();
-    if (sessionData && sessionData.sessionKey && sessionData.accountName === accountName) {
-      console.log('Using saved session for login...');
-      try {
-        loginDetails.sessionKey = Buffer.from(sessionData.sessionKey, 'hex');
-        delete loginDetails.password; // Don't need password when using sessionKey
-      } catch (err) {
-        console.error('Failed to parse session key:', err);
-        // Continue with password login
-      }
-    }
     // If we have a shared secret, generate the auth code
-    else if (sharedSecret && sharedSecret.length > 5) {
+    if (sharedSecret && sharedSecret.length > 5) {
       try {
         loginDetails.twoFactorCode = SteamTotp.generateAuthCode(sharedSecret);
         console.log('Generated 2FA code automatically:', loginDetails.twoFactorCode);
