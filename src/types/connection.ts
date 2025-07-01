@@ -1,7 +1,4 @@
-/**
- * Connection-related type definitions
- */
-
+// Connection-related type definitions
 export interface ConnectionState {
   connected: boolean;
   reconnecting: boolean;

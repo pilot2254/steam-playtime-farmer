@@ -1,7 +1,5 @@
-/**
- * Session Manager Module
- * Handles saving and loading Steam session data for persistent connections
- */
+// Session Manager Module
+// Handles saving and loading Steam session data for persistent connections
 import fs from 'fs';
 import { appConfig } from '../config/app.config.js';
 import type { SessionData } from '../types/steam.js';
@@ -11,9 +9,7 @@ const SESSION_FILE = appConfig.paths.sessionFile;
 
 export function createSessionManager() {
   return {
-    /**
-     * Save Steam session data to file
-     */
+    // Save Steam session data to file
     saveSession(sessionData: SessionData): boolean {
       try {
         if (!sessionData) return false;
@@ -27,9 +23,7 @@ export function createSessionManager() {
       }
     },
 
-    /**
-     * Load Steam session data from file
-     */
+    // Load Steam session data from file
     loadSession(): SessionData | null {
       try {
         if (!fs.existsSync(SESSION_FILE)) return null;
@@ -42,9 +36,7 @@ export function createSessionManager() {
       }
     },
 
-    /**
-     * Clear the saved session data
-     */
+    // Clear the saved session data
     clearSession(): boolean {
       try {
         if (fs.existsSync(SESSION_FILE)) {
@@ -57,9 +49,7 @@ export function createSessionManager() {
       }
     },
 
-    /**
-     * Check if a session exists
-     */
+    // Check if a session exists
     hasSession(): boolean {
       return fs.existsSync(SESSION_FILE);
     },

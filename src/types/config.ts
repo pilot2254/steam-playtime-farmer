@@ -1,6 +1,4 @@
-/**
- * Configuration-related type definitions
- */
+// Configuration-related type definitions
 import type { SteamGame } from './steam.js';
 
 export interface UserConfig {
@@ -12,34 +10,34 @@ export interface UserConfig {
 }
 
 export interface PresetConfig extends UserConfig {
-  readonly id: string;
-  readonly name: string;
+  id: string;
+  name: string;
 }
 
 export interface AppPaths {
-  readonly presetsDir: string;
-  readonly configFile: string;
-  readonly sessionFile: string;
+  presetsDir: string;
+  configFile: string;
+  sessionFile: string;
 }
 
 export interface ReconnectConfig {
-  readonly maxAttempts: number;
-  readonly initialDelay: number;
-  readonly maxDelay: number;
-  readonly backoffMultiplier: number;
+  maxAttempts: number;
+  initialDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
 }
 
 export interface SteamClientConfig {
-  readonly promptSteamGuardCode: boolean;
-  readonly autoRelogin: boolean;
+  promptSteamGuardCode: boolean;
+  autoRelogin: boolean;
 }
 
 export interface AppConfiguration {
-  readonly appName: string;
-  readonly version: string;
-  readonly paths: AppPaths;
-  readonly steam: {
-    readonly reconnect: ReconnectConfig;
-    readonly client: SteamClientConfig;
+  appName: string;
+  version: string;
+  paths: AppPaths;
+  steam: {
+    reconnect: ReconnectConfig;
+    client: SteamClientConfig;
   };
 }

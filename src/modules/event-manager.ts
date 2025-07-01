@@ -1,12 +1,8 @@
-/**
- * Event Manager Module
- * Handles event registration, triggering, and cleanup
- */
+// Event Manager Module
+// Handles event registration, triggering, and cleanup
 import type { EventHandlers, EventName, EventHandler, RemoveHandler } from '../types/events.js';
 
-/**
- * Creates an event manager for handling event subscriptions
- */
+// Creates an event manager for handling event subscriptions
 export function createEventManager() {
   // Event handlers registry
   const eventHandlers: EventHandlers = {
@@ -20,9 +16,7 @@ export function createEventManager() {
   };
 
   return {
-    /**
-     * Register an event handler
-     */
+    // Register an event handler
     on<T extends EventName>(event: T, handler: EventHandler<T>): RemoveHandler {
       if (eventHandlers[event]) {
         (eventHandlers[event] as any[]).push(handler);
@@ -40,18 +34,14 @@ export function createEventManager() {
       };
     },
 
-    /**
-     * Clear all handlers for an event
-     */
+    // Clear all handlers for an event
     clear(event: EventName): void {
       if (eventHandlers[event]) {
         eventHandlers[event] = [] as any;
       }
     },
 
-    /**
-     * Clear multiple event handlers or all events if no specific events provided
-     */
+    // Clear multiple event handlers or all events if no specific events provided
     clearAll(...events: EventName[]): void {
       if (events.length === 0) {
         // Clear all events if no specific events were provided
@@ -68,16 +58,12 @@ export function createEventManager() {
       }
     },
 
-    /**
-     * Check if an event has any handlers
-     */
+    // Check if an event has any handlers
     hasHandlers(event: EventName): boolean {
       return eventHandlers[event] && eventHandlers[event].length > 0;
     },
 
-    /**
-     * Trigger an event with arguments
-     */
+    // Trigger an event with arguments
     trigger<T extends EventName>(event: T, ...args: Parameters<EventHandler<T>>): void {
       if (eventHandlers[event]) {
         eventHandlers[event].forEach((handler) => {

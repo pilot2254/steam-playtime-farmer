@@ -1,6 +1,4 @@
-/**
- * Event-related type definitions
- */
+// Event-related type definitions
 import type { SteamErrorDetails } from './steam.js';
 
 export type SteamGuardCallback = (code: string) => void;

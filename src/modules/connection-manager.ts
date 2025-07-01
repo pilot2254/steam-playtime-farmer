@@ -1,7 +1,5 @@
-/**
- * Connection Manager Module
- * Handles reconnection logic and connection state tracking
- */
+// Connection Manager Module
+// Handles reconnection logic and connection state tracking
 import { appConfig } from '../config/app.config.js';
 import type { 
   ConnectionState, 
@@ -26,16 +24,12 @@ export function createConnectionManager() {
   const callbacks: ConnectionCallbacks = {};
 
   return {
-    /**
-     * Get current connection state
-     */
+    // Get current connection state
     getState(): Readonly<ConnectionState> {
       return { ...connectionState };
     },
 
-    /**
-     * Set connection state properties
-     */
+    // Set connection state properties
     setState(newState: Partial<ConnectionState>): void {
       const oldState = { ...connectionState };
       connectionState = { ...connectionState, ...newState };
@@ -46,16 +40,12 @@ export function createConnectionManager() {
       }
     },
 
-    /**
-     * Set account name for better logging
-     */
+    // Set account name for better logging
     setAccountName(name: string): void {
       connectionState.accountName = name;
     },
 
-    /**
-     * Start reconnection process
-     */
+    // Start reconnection process
     startReconnect(reconnectFunc: () => void): boolean {
       // Don't start if already reconnecting
       if (connectionState.reconnecting) return false;
@@ -69,9 +59,7 @@ export function createConnectionManager() {
       return true;
     },
 
-    /**
-     * Attempt a single reconnection
-     */
+    // Attempt a single reconnection
     attemptReconnect(reconnectFunc: () => void): void {
       if (!connectionState.reconnecting) return;
 
@@ -106,9 +94,7 @@ export function createConnectionManager() {
       }, delay);
     },
 
-    /**
-     * Handle successful reconnection
-     */
+    // Handle successful reconnection
     handleReconnectSuccess(): void {
       connectionState.connected = true;
       connectionState.reconnecting = false;
@@ -120,9 +106,7 @@ export function createConnectionManager() {
       }
     },
 
-    /**
-     * Handle failed reconnection attempt
-     */
+    // Handle failed reconnection attempt
     handleReconnectFailure(): void {
       // Check if we've reached max attempts
       if (connectionState.reconnectAttempts >= connectionState.maxReconnectAttempts) {
@@ -142,16 +126,12 @@ export function createConnectionManager() {
       }
     },
 
-    /**
-     * Register event callbacks
-     */
+    // Register event callbacks
     registerCallbacks(newCallbacks: ConnectionCallbacks): void {
       Object.assign(callbacks, newCallbacks);
     },
 
-    /**
-     * Stop any ongoing reconnection attempts
-     */
+    // Stop any ongoing reconnection attempts
     stopReconnect(): void {
       if (connectionState.reconnecting && connectionState.reconnectFunc) {
         console.log('Stopping reconnection attempts...');
@@ -161,9 +141,7 @@ export function createConnectionManager() {
       }
     },
 
-    /**
-     * Reset connection state
-     */
+    // Reset connection state
     reset(): void {
       // Stop any ongoing reconnection first
       this.stopReconnect();
@@ -180,9 +158,7 @@ export function createConnectionManager() {
       };
     },
 
-    /**
-     * Configure reconnection settings
-     */
+    // Configure reconnection settings
     configure(config: ReconnectOptions): void {
       if (config.maxReconnectAttempts !== undefined) {
         connectionState.maxReconnectAttempts = config.maxReconnectAttempts;

@@ -1,42 +1,32 @@
-/**
- * Steam-related type definitions
- */
-
+// Steam-related type definitions
 export interface SteamGame {
-  readonly appId: number;
-  readonly name: string;
+  appId: number;
+  name: string;
 }
 
 export interface SteamLoginDetails {
-  readonly accountName: string;
-  readonly password?: string;
-  readonly twoFactorCode?: string;
-  readonly sessionKey?: Buffer;
-  readonly rememberPassword?: boolean;
+  accountName: string;
+  password?: string;
+  sharedSecret?: string;
 }
 
 export interface SteamStatus {
-  readonly connected: boolean;
-  readonly reconnecting: boolean;
-  readonly loggedOn: boolean;
-  readonly steamID: string | null;
-  readonly playingAppIds: readonly number[];
-  readonly currentGames: readonly number[];
-  readonly accountName: string | null;
+  connected: boolean;
+  reconnecting: boolean;
+  loggedOn: boolean;
+  steamID: string | null;
+  playingAppIds: number[];
+  currentGames: number[];
+  accountName: string | null;
 }
 
 export interface SteamErrorDetails {
-  readonly message: string;
-  readonly eresult?: number;
-  readonly cause?: string;
+  message: string;
+  eresult?: number;
+  cause?: string;
 }
 
 export interface SessionData {
-  readonly sessionKey: string;
-  readonly accountName: string;
-}
-
-export enum SteamGuardType {
-  EMAIL = 'email',
-  MOBILE = 'mobile'
+  sessionKey: string;
+  accountName: string;
 }

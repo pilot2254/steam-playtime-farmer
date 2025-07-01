@@ -1,7 +1,5 @@
-/**
- * Config Manager Module
- * Handles loading, saving, and managing user configuration and presets
- */
+// Config Manager Module
+// Handles loading, saving, and managing user configuration and presets
 import fs from 'fs';
 import path from 'path';
 import { appConfig, defaultConfig } from '../config/app.config.js';
@@ -11,9 +9,7 @@ import type { UserConfig, PresetConfig, SteamGame } from '../types/config.js';
 const CONFIG_FILE = appConfig.paths.configFile;
 const PRESETS_DIR = appConfig.paths.presetsDir;
 
-/**
- * Creates a configuration manager for handling user settings
- */
+// Creates a configuration manager for handling user settings
 export function createConfigManager() {
   // Current configuration
   let config: UserConfig = { ...defaultConfig };
@@ -23,16 +19,12 @@ export function createConfigManager() {
 
   // Helper functions for file operations
 
-  /**
-   * Ensure a directory exists
-   */
+  // Ensure a directory exists
   const ensureDir = (dir: string): void => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   };
 
-  /**
-   * Read JSON file safely
-   */
+  // Read JSON file safely
   const readJson = <T>(filePath: string, defaultVal: T | null = null): T | null => {
     try {
       if (fs.existsSync(filePath)) {
@@ -45,9 +37,7 @@ export function createConfigManager() {
     return defaultVal;
   };
 
-  /**
-   * Write JSON file safely
-   */
+  // Write JSON file safely
   const writeJson = (filePath: string, data: unknown): boolean => {
     try {
       ensureDir(path.dirname(filePath));
@@ -61,23 +51,17 @@ export function createConfigManager() {
 
   // Return the public API
   return {
-    /**
-     * Get current configuration
-     */
+    // Get current configuration
     get(): Readonly<UserConfig> {
       return { ...config };
     },
 
-    /**
-     * Get current preset ID
-     */
+    // Get current preset ID
     getCurrentPreset(): string | null {
       return currentPreset;
     },
 
-    /**
-     * Load configuration from file
-     */
+    // Load configuration from file
     async load(): Promise<boolean> {
       const loadedConfig = readJson<UserConfig>(CONFIG_FILE, null);
       if (loadedConfig) {
@@ -91,16 +75,12 @@ export function createConfigManager() {
       }
     },
 
-    /**
-     * Save configuration to file
-     */
+    // Save configuration to file
     async save(): Promise<boolean> {
       return writeJson(CONFIG_FILE, config);
     },
 
-    /**
-     * Save current configuration as a preset
-     */
+    // Save current configuration as a preset
     async saveAsPreset(id: string, name: string): Promise<boolean> {
       ensureDir(PRESETS_DIR);
       const presetPath = path.join(PRESETS_DIR, `${id}.json`);
@@ -131,9 +111,7 @@ export function createConfigManager() {
       return success;
     },
 
-    /**
-     * Load a preset
-     */
+    // Load a preset
     async loadPreset(id: string): Promise<boolean> {
       const presetPath = path.join(PRESETS_DIR, `${id}.json`);
       const preset = readJson<PresetConfig>(presetPath, null);
@@ -161,9 +139,7 @@ export function createConfigManager() {
       return saved;
     },
 
-    /**
-     * Delete a preset
-     */
+    // Delete a preset
     async deletePreset(id: string): Promise<boolean> {
       const presetPath = path.join(PRESETS_DIR, `${id}.json`);
 
@@ -185,9 +161,7 @@ export function createConfigManager() {
       }
     },
 
-    /**
-     * Get all available presets
-     */
+    // Get all available presets
     async getPresets(): Promise<PresetConfig[]> {
       ensureDir(PRESETS_DIR);
       try {
@@ -218,9 +192,7 @@ export function createConfigManager() {
       }
     },
 
-    /**
-     * Fix existing presets by adding missing name field
-     */
+    // Fix existing presets by adding missing name field
     async fixPresets(): Promise<number> {
       ensureDir(PRESETS_DIR);
       try {
@@ -249,9 +221,7 @@ export function createConfigManager() {
       }
     },
 
-    /**
-     * Add a game to the configuration
-     */
+    // Add a game to the configuration
     async addGame(appId: number, name: string): Promise<boolean> {
       // Check if game already exists
       const existingIndex = config.games.findIndex((game) => game.appId === appId);
@@ -267,9 +237,7 @@ export function createConfigManager() {
       return this.save();
     },
 
-    /**
-     * Remove a game from the configuration
-     */
+    // Remove a game from the configuration
     async removeGame(index: number): Promise<SteamGame | false> {
       if (index < 0 || index >= config.games.length) return false;
       const removed = config.games.splice(index, 1)[0];

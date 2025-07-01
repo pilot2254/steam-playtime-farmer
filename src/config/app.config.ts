@@ -1,7 +1,5 @@
-/**
- * Steam Playtime Farmer Configuration
- * This file contains all application-wide configuration settings
- */
+// Steam Playtime Farmer Configuration
+// This file contains all application-wide configuration settings
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { AppConfiguration, UserConfig } from '../types/config.js';
@@ -41,7 +39,7 @@ export const appConfig: AppConfiguration = {
       autoRelogin: false,
     },
   },
-} as const;
+};
 
 // Default user configuration (will be saved to configFileName)
 export const defaultConfig: UserConfig = {

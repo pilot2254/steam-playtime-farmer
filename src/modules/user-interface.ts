@@ -1,15 +1,10 @@
-/**
- * User Interface Module
- * Handles basic user interactions with a simplified interface
- */
+// User Interface Module
+// Handles basic user interactions with a simplified interface
 import readline from 'readline';
 import type { ConfigManager } from './config-manager.js';
 import type { SteamClient } from './steam-client.js';
-import type { SteamGuardCallback } from '../types/events.js';
 
-/**
- * Creates a user interface for the application
- */
+// Creates a user interface for the application
 export function createUserInterface(configManager: ConfigManager, steamClient: SteamClient) {
   // Create readline interface - shared for all interactions
   const rl = readline.createInterface({
@@ -22,30 +17,22 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
   // Helper functions for UI operations
 
-  /**
-   * Clear the console screen
-   */
+  // Clear the console screen
   const clearConsole = (): void => {
     process.stdout.write('\x1Bc');
     if (process.platform === 'win32') console.clear();
   };
 
-  /**
-   * Display a question and get response
-   */
+  // Display a question and get response
   const question = (query: string): Promise<string> => 
     new Promise((resolve) => rl.question(query, resolve));
 
-  /**
-   * Wait for user to press Enter
-   */
+  // Wait for user to press Enter
   const waitForEnter = async (msg = 'Press Enter to continue...'): Promise<void> => {
     await question(msg);
   };
 
-  /**
-   * Exit the application cleanly
-   */
+  // Exit the application cleanly
   const exitApplication = (): void => {
     console.log('\nExiting application...');
     steamClient.stopFarming();
@@ -53,9 +40,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     process.exit(0);
   };
 
-  /**
-   * Setup event handlers for Steam farming
-   */
+  // Setup event handlers for Steam farming
   function setupFarmingEventHandlers(): void {
     // Handle Steam Guard authentication requests
     const removeGuardHandler = steamClient.on('steamGuard', async (domain, callback, lastCodeWrong) => {
@@ -114,9 +99,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     });
   }
 
-  /**
-   * Start farming with current configuration
-   */
+  // Start farming with current configuration
   async function startFarming(): Promise<void> {
     clearConsole();
     const config = configManager.get();
@@ -157,9 +140,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     }, 10000); // Give it 10 seconds to connect
   }
 
-  /**
-   * Show farming interface with commands
-   */
+  // Show farming interface with commands
   function showFarmingInterface(): void {
     clearConsole();
     const config = configManager.get();
@@ -177,9 +158,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     console.log('stop   - Stop farming and return to menu');
     console.log('help   - Show this help message');
 
-    /**
-     * Process user commands during farming
-     */
+    // Process user commands during farming
     function processCommands(): void {
       rl.once('line', async (input) => {
         const cmd = input.trim().toLowerCase();
@@ -225,9 +204,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     processCommands();
   }
 
-  /**
-   * Load a preset from the presets directory
-   */
+  // Load a preset from the presets directory
   async function loadPreset(): Promise<void> {
     clearConsole();
     console.log('\n===== Load Preset =====');
@@ -278,9 +255,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     showMainMenu();
   }
 
-  /**
-   * Save current configuration as a preset
-   */
+  // Save current configuration as a preset
   async function savePreset(): Promise<void> {
     clearConsole();
     console.log('\n===== Save Preset =====');
@@ -334,9 +309,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     showMainMenu();
   }
 
-  /**
-   * Delete a preset from the presets directory
-   */
+  // Delete a preset from the presets directory
   async function deletePreset(): Promise<void> {
     clearConsole();
     console.log('\n===== Delete Preset =====');
@@ -391,9 +364,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     showMainMenu();
   }
 
-  /**
-   * Show main menu with options
-   */
+  // Show main menu with options
   async function showMainMenu(): Promise<void> {
     try {
       clearConsole();

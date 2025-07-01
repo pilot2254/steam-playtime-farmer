@@ -1,7 +1,5 @@
-/**
- * Steam Client Module
- * Handles Steam authentication, game farming, and connection management
- */
+// Steam Client Module
+// Handles Steam authentication, game farming, and connection management
 import SteamUser from 'steam-user';
 import SteamTotp from 'steam-totp';
 import path from 'path';
@@ -22,9 +20,7 @@ import type { ReconnectOptions } from '../types/connection.js';
 // Get the directory name
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/**
- * Creates and returns a Steam client with farming capabilities
- */
+// Creates and returns a Steam client with farming capabilities
 export function createSteamClient() {
   // Create Steam client with proper options
   const client = new SteamUser({
@@ -50,33 +46,25 @@ export function createSteamClient() {
     onReconnectFailed: handleReconnectFailed,
   });
 
-  /**
-   * Called when a reconnection attempt is about to be made
-   */
+  // Called when a reconnection attempt is about to be made
   function handleReconnecting(attempt: number, maxAttempts: number, delay: number): void {
     console.log(`Reconnecting to Steam (${attempt}/${maxAttempts}) in ${Math.round(delay / 1000)} seconds...`);
     eventManager.trigger('reconnecting', attempt, maxAttempts, delay);
   }
 
-  /**
-   * Called when successfully reconnected
-   */
+  // Called when successfully reconnected
   function handleReconnected(): void {
     console.log('Successfully reconnected to Steam!');
     eventManager.trigger('reconnected');
   }
 
-  /**
-   * Called when all reconnection attempts fail
-   */
+  // Called when all reconnection attempts fail
   function handleReconnectFailed(reason: string | null): void {
     console.log(`Failed to reconnect to Steam after multiple attempts. Reason: ${reason || 'Unknown'}`);
     eventManager.trigger('reconnectFailed', reason);
   }
 
-  /**
-   * Set up Steam client event handlers
-   */
+  // Set up Steam client event handlers
   function setupEvents(): void {
     // Remove any existing listeners to prevent duplicates
     client.removeAllListeners();
@@ -89,9 +77,7 @@ export function createSteamClient() {
     client.on('sessionExpired', handleSessionExpired);
   }
 
-  /**
-   * Handle successful login
-   */
+  // Handle successful login
   function handleLoggedOn(details: any): void {
     // Fix for undefined username issue - get name from multiple possible sources
     const accountName = client.accountInfo?.name || lastLoginDetails?.accountName || 'Unknown';
@@ -126,9 +112,7 @@ export function createSteamClient() {
     eventManager.clear('steamGuard');
   }
 
-  /**
-   * Save session data for future reconnections
-   */
+  // Save session data for future reconnections
   function saveSessionData(accountName: string): void {
     try {
       const sessionKey = (client as any)._sessionKey;
@@ -144,9 +128,7 @@ export function createSteamClient() {
     }
   }
 
-  /**
-   * Handle Steam Guard request
-   */
+  // Handle Steam Guard request
   function handleSteamGuard(domain: string | null, callback: (code: string) => void, lastCodeWrong: boolean): void {
     // Call all registered handlers
     if (eventManager.hasHandlers('steamGuard')) {
@@ -158,9 +140,7 @@ export function createSteamClient() {
     }
   }
 
-  /**
-   * Handle Steam client errors
-   */
+  // Handle Steam client errors
   function handleError(err: any): void {
     // Pass the full error object including Steam error codes
     const errorDetails: SteamErrorDetails = {
@@ -172,9 +152,7 @@ export function createSteamClient() {
     eventManager.trigger('error', errorDetails);
   }
 
-  /**
-   * Handle disconnection from Steam
-   */
+  // Handle disconnection from Steam
   function handleDisconnected(eresult: number, msg: string): void {
     const reason = msg || eresult.toString();
     console.log(`Disconnected from Steam: ${reason}`);
@@ -195,9 +173,7 @@ export function createSteamClient() {
     }
   }
 
-  /**
-   * Handle session expiration
-   */
+  // Handle session expiration
   function handleSessionExpired(): void {
     console.log('Session expired.');
 
@@ -213,9 +189,7 @@ export function createSteamClient() {
     }
   }
 
-  /**
-   * Attempt to reconnect using saved session or credentials
-   */
+  // Attempt to reconnect using saved session or credentials
   function reconnect(): boolean {
     // Don't reconnect if we're not farming anymore
     if (!isFarming) {
@@ -252,9 +226,7 @@ export function createSteamClient() {
     return false;
   }
 
-  /**
-   * Update the games being played
-   */
+  // Update the games being played
   function updateGamesPlayed(): boolean {
     // Check if logged in
     if (!client.steamID) {
@@ -293,9 +265,7 @@ export function createSteamClient() {
     }
   }
 
-  /**
-   * Login to Steam
-   */
+  // Login to Steam
   function login(accountName: string, password?: string, sharedSecret?: string): void {
     // Store login details for potential reconnection
     lastLoginDetails = { accountName, password, sharedSecret };
@@ -337,14 +307,10 @@ export function createSteamClient() {
 
   // Return the public API
   return {
-    /**
-     * Check if client is farming
-     */
+    // Check if client is farming
     isFarming: (): boolean => isFarming,
 
-    /**
-     * Get client status
-     */
+    // Get client status
     getStatus: (): SteamStatus => ({
       connected: connectionManager.getState().connected,
       reconnecting: connectionManager.getState().reconnecting,
@@ -355,9 +321,7 @@ export function createSteamClient() {
       accountName: connectionManager.getState().accountName,
     }),
 
-    /**
-     * Login to Steam
-     */
+    // Login to Steam
     login: (accountName: string, password?: string, sharedSecret?: string): void => {
       // Reset state
       isFarming = false;
@@ -367,30 +331,20 @@ export function createSteamClient() {
       login(accountName, password, sharedSecret);
     },
 
-    /**
-     * Reconnect to Steam
-     */
+    // Reconnect to Steam
     reconnect: (): boolean => reconnect(),
 
-    /**
-     * Register event handlers
-     */
+    // Register event handlers
     on: <T extends EventName>(event: T, handler: EventHandler<T>): RemoveHandler => 
       eventManager.on(event, handler),
 
-    /**
-     * Clear all handlers for an event
-     */
+    // Clear all handlers for an event
     clearHandlers: (event: EventName): void => eventManager.clear(event),
 
-    /**
-     * Clear all or specified event handlers
-     */
+    // Clear all or specified event handlers
     clearAllHandlers: (...events: EventName[]): void => eventManager.clearAll(...events),
 
-    /**
-     * Start farming games
-     */
+    // Start farming games
     startFarming: (gameIds: number[]): boolean => {
       if (!Array.isArray(gameIds)) {
         console.error('Invalid game IDs provided');
@@ -409,9 +363,7 @@ export function createSteamClient() {
       }
     },
 
-    /**
-     * Stop farming
-     */
+    // Stop farming
     stopFarming: (): boolean => {
       // Clear any reconnection attempts first
       connectionManager.reset();
@@ -432,9 +384,7 @@ export function createSteamClient() {
       return true;
     },
 
-    /**
-     * Add a game to farming
-     */
+    // Add a game to farming
     addGame: (appId: number): boolean => {
       if (isNaN(appId)) return false;
 
@@ -446,9 +396,7 @@ export function createSteamClient() {
       return false;
     },
 
-    /**
-     * Remove a game from farming
-     */
+    // Remove a game from farming
     removeGame: (appId: number): boolean => {
       if (isNaN(appId)) return false;
 
@@ -461,18 +409,14 @@ export function createSteamClient() {
       return false;
     },
 
-    /**
-     * Update all games being farmed
-     */
+    // Update all games being farmed
     updateGames: (gameIds: number[]): boolean => {
       if (!Array.isArray(gameIds)) return false;
       currentGames = gameIds.filter((id) => !isNaN(id));
       return updateGamesPlayed();
     },
 
-    /**
-     * Configure reconnection settings
-     */
+    // Configure reconnection settings
     configureReconnect: (options: ReconnectOptions): void => {
       connectionManager.configure(options);
     },

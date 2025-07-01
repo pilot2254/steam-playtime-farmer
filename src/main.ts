@@ -1,7 +1,5 @@
-/**
- * Steam Playtime Farmer - Main entry point
- * This file initializes the application and sets up the core modules
- */
+// Steam Playtime Farmer - Main entry point
+// This file initializes the application and sets up the core modules
 import { createSteamClient } from './modules/steam-client.js';
 import { createConfigManager } from './modules/config-manager.js';
 import { createUserInterface } from './modules/user-interface.js';
