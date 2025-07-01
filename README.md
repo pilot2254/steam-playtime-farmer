@@ -1,7 +1,6 @@
-### Steam Playtime Farmer
+# Steam Playtime Farmer
 
 A simple, command-line tool that automatically farms playtime for your Steam games. This application lets you run multiple games simultaneously in the background to accumulate playtime hours without actually playing the games.
-
 
 ## 📋 Table of Contents
 
@@ -16,28 +15,25 @@ A simple, command-line tool that automatically farms playtime for your Steam gam
 - [FAQ](#faq)
 - [License](#license)
 
-
 ## What is This?
 
 Steam Playtime Farmer is a tool that lets you "farm" hours on your Steam games without actually playing them. This can be useful for:
 
-- Increasing your playtime stats
-- Earning Steam trading cards
-- Making your profile look more active
-- Testing Steam's family sharing features
-
+- 🎮 Increasing your playtime stats
+- 🎴 Earning Steam trading cards
+- 📊 Making your profile look more active
+- 👨‍👩‍👧‍👦 Testing Steam's family sharing features
 
 The application runs in the background and doesn't require your games to be installed - it simply tells Steam that you're playing the games.
 
 ## Features
 
-- 🎮 Farm multiple games simultaneously
-- 🔐 Secure login with Steam Guard support
-- 💾 Save and load different game presets
-- 🔄 Automatic reconnection if disconnected
-- 📱 Optional 2FA integration with shared secret
-- 🔒 Optional password saving
-
+- 🎮 **Farm multiple games simultaneously**
+- 🔐 **Secure login with Steam Guard support**
+- 💾 **Save and load different game presets**
+- 🔄 **Automatic reconnection if disconnected**
+- 📱 **Optional 2FA integration with shared secret**
+- 🔒 **Optional password saving**
 
 ## Installation for Regular Users
 
@@ -46,67 +42,57 @@ The application runs in the background and doesn't require your games to be inst
 This application runs on Node.js, which you'll need to install first:
 
 1. Go to [nodejs.org](https://nodejs.org/)
-2. Download the "LTS" (Long Term Support) version
+2. Download the **"LTS"** (Long Term Support) version
 3. Run the installer and follow the instructions
 4. When asked about additional tools, check "Automatically install the necessary tools"
-
 
 ### Step 2: Download Steam Playtime Farmer
 
 1. Download the latest release from [the releases page](https://github.com/pilot2254/steam-playtime-farmer/releases)
 2. Extract the ZIP file to a folder on your computer
 
-
 ### Step 3: Install Dependencies
 
-1. Open Command Prompt (Windows) or Terminal (Mac/Linux)
+1. Open **Command Prompt** (Windows) or **Terminal** (Mac/Linux)
 2. Navigate to the folder where you extracted the files:
 
-```plaintext
+```bash
 cd path/to/steam-playtime-farmer
 ```
 
-
 3. Install the required packages:
 
-```plaintext
+```bash
 npm install
 ```
-
 
 ## How to Use
 
 ### Starting the Application
 
-1. Open Command Prompt (Windows) or Terminal (Mac/Linux)
+1. Open **Command Prompt** (Windows) or **Terminal** (Mac/Linux)
 2. Navigate to the application folder:
 
-```plaintext
+```bash
 cd path/to/steam-playtime-farmer
 ```
 
-
 3. Start the application:
 
-```plaintext
+```bash
 npm start
 ```
-
-
-
 
 ### First-Time Setup
 
 1. When you first run the application, it will create a default configuration file
 2. You'll need to create a preset with your Steam account and games
 
-
 ### Logging In
 
-1. Select "Start Farming" from the main menu
+1. Select **"Start Farming"** from the main menu
 2. Enter your Steam password when prompted
 3. If you have Steam Guard enabled, you'll be asked for your code
-
 
 ### Commands While Farming
 
@@ -116,7 +102,6 @@ Once farming has started, you can use these commands:
 - `stop` - Stop farming and return to the main menu
 - `help` - Show available commands
 
-
 ## Creating and Managing Presets
 
 Presets allow you to save different configurations for different accounts or sets of games.
@@ -124,24 +109,21 @@ Presets allow you to save different configurations for different accounts or set
 ### Creating a Preset
 
 1. First, make sure you've added your account details and games to the current configuration
-2. From the main menu, select "Save Current Config as Preset"
+2. From the main menu, select **"Save Current Config as Preset"**
 3. Enter a unique ID (letters, numbers, and hyphens only)
 4. Enter a name for your preset
 
-
 ### Loading a Preset
 
-1. From the main menu, select "Load Preset"
+1. From the main menu, select **"Load Preset"**
 2. Choose the preset you want to load from the list
 3. The preset will be loaded and ready to use
 
-
 ### Deleting a Preset
 
-1. From the main menu, select "Delete Preset"
+1. From the main menu, select **"Delete Preset"**
 2. Choose the preset you want to delete
 3. Confirm the deletion
-
 
 ## Steam Guard Authentication
 
@@ -157,26 +139,32 @@ For automatic 2FA code generation:
 2. Add it to your configuration or preset
 3. The application will generate codes automatically
 
-
 ## For Developers
 
 ### Project Structure
 
-```plaintext
+```
 steam-playtime-farmer/
-├── .gitignore
-├── package.json
-├── package-lock.json
-├── modules/
-│   ├── config-manager.js
-│   ├── connection-manager.js
-│   ├── event-manager.js
-│   ├── session-manager.js
-│   ├── steam-client.js
-│   └── user-interface.js
+├── src/
+│   ├── config/
+│   │   └── app.config.ts
+│   ├── modules/
+│   │   ├── config-manager.ts
+│   │   ├── connection-manager.ts
+│   │   ├── event-manager.ts
+│   │   ├── session-manager.ts
+│   │   ├── steam-client.ts
+│   │   └── user-interface.ts
+│   ├── types/
+│   │   ├── config.ts
+│   │   ├── connection.ts
+│   │   ├── events.ts
+│   │   └── steam.ts
+│   └── main.ts
 ├── presets/
-├── app.config.js
-├── main.js
+├── dist/
+├── package.json
+├── tsconfig.json
 ├── LICENSE
 └── README.md
 ```
@@ -190,7 +178,6 @@ steam-playtime-farmer/
 - **Connection Manager**: Manages reconnection logic
 - **Event Manager**: Provides an event system for communication
 
-
 ### Adding New Features
 
 1. Fork the repository
@@ -199,10 +186,9 @@ steam-playtime-farmer/
 4. Test thoroughly
 5. Submit a pull request
 
-
 ### Building from Source
 
-```shellscript
+```bash
 # Clone the repository
 git clone https://github.com/pilot2254/steam-playtime-farmer.git
 
@@ -212,30 +198,51 @@ cd steam-playtime-farmer
 # Install dependencies
 npm install
 
+# Build the project
+npm run build
+
 # Run the application
 npm start
+```
+
+### Development Commands
+
+```bash
+# Build the project
+npm run build
+
+# Start the application
+npm start
+
+# Watch for changes during development
+npm run dev
+
+# Clean build directory
+npm run clean
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### "Error: Incorrect password or invalid credentials"
+#### ❌ "Error: Incorrect password or invalid credentials"
 
 - Double-check your Steam username and password
 - Make sure you're entering the correct Steam Guard code
 
-
-#### "Failed to reconnect after multiple attempts"
+#### ❌ "Failed to reconnect after multiple attempts"
 
 - Check your internet connection
 - Steam servers might be down - try again later
 
-
-#### "Steam Guard required but no handler registered"
+#### ❌ "Steam Guard required but no handler registered"
 
 - Restart the application and try again
 
+#### ❌ "Command not found: tsc"
+
+- Make sure TypeScript is installed: `npm install`
+- Try rebuilding: `npm run build`
 
 ### Logs
 
@@ -243,30 +250,34 @@ The application logs important information to the console. If you're experiencin
 
 ## FAQ
 
-### Is this against Steam's terms of service?
+### ❓ Is this against Steam's terms of service?
 
 Using this tool might violate Steam's terms of service. Use at your own risk.
 
-### Will this get me VAC banned?
+### ❓ Will this get me VAC banned?
 
 No, this tool doesn't modify any game files or interact with VAC-protected games in any way that would trigger a VAC ban.
 
-### Do I need to have the games installed?
+### ❓ Do I need to have the games installed?
 
 No, the application only tells Steam you're playing the games - it doesn't actually run them.
 
-### Can I use this with multiple Steam accounts?
+### ❓ Can I use this with multiple Steam accounts?
 
 Yes, you can create different presets for different accounts.
 
-### Is my Steam password stored securely?
+### ❓ Is my Steam password stored securely?
 
 Your password is only stored if you enable the "Remember Password" option. It's stored locally on your computer in plain text, so only enable this option if your computer is secure.
 
+### ❓ How many games can I farm at once?
+
+Steam typically allows farming multiple games simultaneously, but there may be practical limits depending on your account status.
+
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**Disclaimer**: This tool is for educational purposes only. The developers are not responsible for any consequences resulting from the use of this software.
+**⚠️ Disclaimer**: This tool is for educational purposes only. The developers are not responsible for any consequences resulting from the use of this software.
