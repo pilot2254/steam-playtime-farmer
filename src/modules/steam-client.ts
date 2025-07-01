@@ -24,7 +24,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export function createSteamClient() {
   // Create Steam client with proper options
   const client = new SteamUser({
-    promptSteamGuardCode: appConfig.steam.client.promptSteamGuardCode,
     dataDirectory: path.join(__dirname, '../..'),
     autoRelogin: appConfig.steam.client.autoRelogin,
   });
@@ -74,7 +73,6 @@ export function createSteamClient() {
     client.on('steamGuard', handleSteamGuard);
     client.on('error', handleError);
     client.on('disconnected', handleDisconnected);
-    client.on('sessionExpired', handleSessionExpired);
   }
 
   // Handle successful login
@@ -153,7 +151,7 @@ export function createSteamClient() {
   }
 
   // Handle disconnection from Steam
-  function handleDisconnected(eresult: number, msg: string): void {
+  function handleDisconnected(eresult: any, msg?: string): void {
     const reason = msg || eresult.toString();
     console.log(`Disconnected from Steam: ${reason}`);
 
@@ -164,28 +162,12 @@ export function createSteamClient() {
     });
 
     // Trigger event
-    eventManager.trigger('disconnected', eresult, msg);
+    eventManager.trigger('disconnected', eresult, msg || '');
 
     // Start reconnection process if we were farming
     if (isFarming && lastLoginDetails) {
       console.log('Attempting to reconnect...');
       connectionManager.startReconnect(() => reconnect());
-    }
-  }
-
-  // Handle session expiration
-  function handleSessionExpired(): void {
-    console.log('Session expired.');
-
-    // Clear the saved session since it's no longer valid
-    sessionManager.clearSession();
-
-    // If we were farming, try to reconnect
-    if (isFarming && lastLoginDetails) {
-      console.log('Attempting to reconnect with credentials...');
-      connectionManager.startReconnect(() =>
-        login(lastLoginDetails!.accountName, lastLoginDetails!.password, lastLoginDetails!.sharedSecret),
-      );
     }
   }
 
@@ -204,7 +186,7 @@ export function createSteamClient() {
       try {
         console.log('Reconnecting using saved session...');
         client.logOn({
-          accountName: sessionData.accountName || lastLoginDetails?.accountName,
+          accountName: sessionData.accountName || lastLoginDetails?.accountName || '',
           sessionKey: Buffer.from(sessionData.sessionKey, 'hex'),
         });
         return true;
@@ -243,9 +225,12 @@ export function createSteamClient() {
     try {
       console.log(`Attempting to play ${currentGames.length} games...`);
 
-      // For multiple games, we need to use an array of objects
+      // For multiple games, we need to use an array of objects with game_extra_info
       if (currentGames.length > 1) {
-        const gameObjects = currentGames.map((appId) => ({ game_id: appId }));
+        const gameObjects = currentGames.map((appId) => ({ 
+          game_id: appId,
+          game_extra_info: `Game ${appId}`
+        }));
         client.gamesPlayed(gameObjects);
       } else {
         // For a single game, we can just use the ID
