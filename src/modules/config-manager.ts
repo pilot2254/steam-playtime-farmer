@@ -3,7 +3,8 @@
 import fs from 'fs';
 import path from 'path';
 import { appConfig, defaultConfig } from '../config/app.config.js';
-import type { UserConfig, PresetConfig, SteamGame } from '../types/config.js';
+import type { UserConfig, PresetConfig } from '../types/config.js';
+import type { SteamGame } from '../types/steam.js';
 
 // Configuration file paths
 const CONFIG_FILE = appConfig.paths.configFile;
