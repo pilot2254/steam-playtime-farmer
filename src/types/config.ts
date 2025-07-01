@@ -7,15 +7,10 @@ export interface UserConfig {
   games: SteamGame[];
   rememberPassword: boolean;
   password: string;
-}
-
-export interface PresetConfig extends UserConfig {
-  id: string;
   name: string;
 }
 
 export interface AppPaths {
-  presetsDir: string;
   configFile: string;
   sessionFile: string;
 }
@@ -28,7 +23,6 @@ export interface ReconnectConfig {
 }
 
 export interface SteamClientConfig {
-  promptSteamGuardCode: boolean;
   autoRelogin: boolean;
 }
 

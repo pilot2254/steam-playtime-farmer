@@ -104,15 +104,10 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     clearConsole();
     const config = configManager.get();
 
-    // Validate configuration before starting
-    if (!config.games?.length) {
-      console.log('No games configured. Add games to the config file or load a preset.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    if (!config.accountName) {
-      console.log('No Steam account configured. Edit the config file or load a preset.');
+    // Check if configuration is valid
+    if (!configManager.isValidForFarming()) {
+      console.log('Configuration is not ready for farming.');
+      console.log('Please edit user-config.json with your Steam account details and games.');
       await waitForEnter();
       return showMainMenu();
     }
@@ -123,13 +118,14 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
     // Get password - either from saved config or user input
     const password =
-      config.rememberPassword && config.password && config.password.length > 0
+      config.rememberPassword && config.password && config.password !== 'YOUR_PASSWORD_HERE'
         ? config.password
         : await question('Enter your Steam password: ');
 
     // Attempt to login to Steam
     console.log(`Attempting to login as ${config.accountName}...`);
-    steamClient.login(config.accountName, password, config.sharedSecret);
+    const sharedSecret = config.sharedSecret !== 'THIS_IS_OPTIONAL' ? config.sharedSecret : undefined;
+    steamClient.login(config.accountName, password, sharedSecret);
 
     // Set a timeout to check if login was successful
     setTimeout(() => {
@@ -204,164 +200,21 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     processCommands();
   }
 
-  // Load a preset from the presets directory
-  async function loadPreset(): Promise<void> {
-    clearConsole();
-    console.log('\n===== Load Preset =====');
-
-    // Get available presets
-    const presets = await configManager.getPresets();
-
-    // Check if any presets exist
-    if (!presets.length) {
-      console.log('No presets available.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    // Display available presets
-    console.log('Available presets:');
-    presets.forEach((preset, i) =>
-      console.log(
-        `${i + 1}. ${preset.name || preset.id} (${preset.games.length} games) - Account: ${preset.accountName || 'Not set'}`,
-      ),
-    );
-
-    // Get user selection
-    const choice = await question("\nEnter preset number or 'q' to cancel: ");
-
-    if (choice.toLowerCase() === 'q') return showMainMenu();
-
-    // Validate selection
-    const idx = parseInt(choice) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= presets.length) {
-      console.log('Invalid selection.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    // Load the selected preset
-    const preset = presets[idx];
-    console.log(`Loading preset: ${preset.name || preset.id}...`);
-
-    try {
-      const success = await configManager.loadPreset(preset.id);
-      console.log(success ? 'Preset loaded successfully!' : 'Failed to load preset.');
-    } catch (err) {
-      console.error('Error loading preset:', err);
-    }
-
-    await waitForEnter();
-    showMainMenu();
-  }
-
-  // Save current configuration as a preset
-  async function savePreset(): Promise<void> {
-    clearConsole();
-    console.log('\n===== Save Preset =====');
-
+  // Show configuration status
+  function showConfigStatus(): void {
     const config = configManager.get();
-
-    // Validate configuration before saving
-    if (!config.accountName) {
-      console.log('No account configured. Cannot save preset.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    if (!config.games?.length) {
-      console.log('No games configured. Cannot save preset.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    // Get preset ID from user
-    const presetId = await question('Enter preset ID (letters, numbers, hyphens only): ');
-
-    // Validate preset ID format
-    if (!/^[a-zA-Z0-9-]+$/.test(presetId)) {
-      console.log('Invalid preset ID. Use only letters, numbers, and hyphens.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    // Get preset name from user
-    const presetName = await question('Enter preset name: ');
-
-    // Validate preset name
-    if (!presetName) {
-      console.log('Preset name cannot be empty.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    // Save the preset
-    try {
-      const success = await configManager.saveAsPreset(presetId, presetName);
-      console.log(
-        success ? `Preset "${presetName}" saved successfully!` : 'Failed to save preset. It may already exist.',
-      );
-    } catch (err) {
-      console.error('Error saving preset:', err);
-    }
-
-    await waitForEnter();
-    showMainMenu();
-  }
-
-  // Delete a preset from the presets directory
-  async function deletePreset(): Promise<void> {
-    clearConsole();
-    console.log('\n===== Delete Preset =====');
-
-    // Get available presets
-    const presets = await configManager.getPresets();
-
-    // Check if any presets exist
-    if (!presets.length) {
-      console.log('No presets available.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    // Display available presets
-    console.log('Available presets:');
-    presets.forEach((preset, i) =>
-      console.log(
-        `${i + 1}. ${preset.name || preset.id} (${preset.games.length} games) - Account: ${preset.accountName || 'Not set'}`,
-      ),
-    );
-
-    // Get user selection
-    const choice = await question("\nEnter preset number to delete or 'q' to cancel: ");
-
-    if (choice.toLowerCase() === 'q') return showMainMenu();
-
-    // Validate selection
-    const idx = parseInt(choice) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= presets.length) {
-      console.log('Invalid selection.');
-      await waitForEnter();
-      return showMainMenu();
-    }
-
-    // Confirm deletion
-    const preset = presets[idx];
-    const confirm = await question(`Are you sure you want to delete "${preset.name || preset.id}"? (yes/no): `);
-
-    if (confirm.toLowerCase().startsWith('y')) {
-      try {
-        const success = await configManager.deletePreset(preset.id);
-        console.log(success ? `Preset "${preset.name || preset.id}" deleted.` : 'Failed to delete preset.');
-      } catch (err) {
-        console.error('Error deleting preset:', err);
-      }
+    
+    console.log(`Account: ${config.accountName}`);
+    console.log(`Games: ${config.games?.length || 0} configured`);
+    console.log(`2FA: ${config.sharedSecret && config.sharedSecret !== 'THIS_IS_OPTIONAL' ? 'Configured' : 'Not configured'}`);
+    console.log(`Remember Password: ${config.rememberPassword ? 'Yes' : 'No'}`);
+    
+    if (!configManager.isValidForFarming()) {
+      console.log('\nConfiguration Status: Not ready for farming');
+      console.log('Please edit user-config.json with your Steam account details.');
     } else {
-      console.log('Deletion cancelled.');
+      console.log('\nConfiguration Status: Ready for farming');
     }
-
-    await waitForEnter();
-    showMainMenu();
   }
 
   // Show main menu with options
@@ -371,22 +224,16 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
       // Show header and current configuration summary
       console.log('\n===== Steam Playtime Farmer =====');
-
-      const config = configManager.get();
-      console.log(`Account: ${config.accountName || 'Not configured'}`);
-      console.log(`Games: ${config.games?.length || 0} configured`);
-      console.log(`2FA: ${config.sharedSecret ? 'Configured' : 'Not configured'}`);
+      showConfigStatus();
 
       // Show menu options
       console.log('\nOptions:');
       console.log('1. Start Farming');
-      console.log('2. Load Preset');
-      console.log('3. Save Current Config as Preset');
-      console.log('4. Delete Preset');
-      console.log('5. Exit');
+      console.log('2. View Configuration');
+      console.log('3. Exit');
 
       // Get user choice
-      const choice = await question('\nEnter your choice (1-5): ');
+      const choice = await question('\nEnter your choice (1-3): ');
 
       // Process user choice
       switch (choice) {
@@ -394,15 +241,9 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
           await startFarming();
           break;
         case '2':
-          await loadPreset();
+          await viewConfiguration();
           break;
         case '3':
-          await savePreset();
-          break;
-        case '4':
-          await deletePreset();
-          break;
-        case '5':
           exitApplication();
           break;
         default:
@@ -415,6 +256,33 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
       await waitForEnter('\nAn error occurred. Press Enter to restart the menu...');
       showMainMenu();
     }
+  }
+
+  // View current configuration
+  async function viewConfiguration(): Promise<void> {
+    clearConsole();
+    console.log('\n===== Current Configuration =====');
+    
+    const config = configManager.get();
+    
+    console.log(`Account Name: ${config.accountName}`);
+    console.log(`Shared Secret: ${config.sharedSecret ? (config.sharedSecret === 'THIS_IS_OPTIONAL' ? 'Not configured' : 'Configured') : 'Not configured'}`);
+    console.log(`Remember Password: ${config.rememberPassword ? 'Yes' : 'No'}`);
+    console.log(`Password: ${config.password && config.password !== 'YOUR_PASSWORD_HERE' ? 'Configured' : 'Not configured'}`);
+    
+    console.log('\nConfigured Games:');
+    if (config.games && config.games.length > 0) {
+      config.games.forEach((game, index) => {
+        console.log(`${index + 1}. ${game.name} (AppID: ${game.appId})`);
+      });
+    } else {
+      console.log('No games configured.');
+    }
+    
+    console.log('\nTo modify the configuration, edit the user-config.json file.');
+    
+    await waitForEnter();
+    showMainMenu();
   }
 
   // Return the public API

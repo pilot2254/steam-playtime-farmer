@@ -8,7 +8,7 @@ A simple command-line tool that automatically farms playtime for your Steam game
 - [Features](#features)
 - [Installation for Regular Users](#installation-for-regular-users)
 - [How to Use](#how-to-use)
-- [Creating and Managing Presets](#creating-and-managing-presets)
+- [Configuration](#configuration)
 - [Steam Guard Authentication](#steam-guard-authentication)
 - [For Developers](#for-developers)
 - [Troubleshooting](#troubleshooting)
@@ -33,10 +33,10 @@ The application runs in the background and doesn't require your games to be inst
 
 - Farm multiple games simultaneously
 - Secure login with Steam Guard support
-- Save and load different game presets
 - Automatic reconnection if disconnected
 - Optional 2FA integration with shared secret
 - Optional password saving
+- Simple configuration file management
 
 ## Installation for Regular Users
 
@@ -91,12 +91,12 @@ npm start
 
 ### First-Time Setup
 
-When you first run the application, it will create a default configuration file. You'll need to create a preset with your Steam account and games before you can start farming.
+When you first run the application, it will create a default configuration file called `user-config.json`. You'll need to edit this file with your Steam account details before you can start farming.
 
 ### Logging In
 
 1. Select "Start Farming" from the main menu
-2. Enter your Steam password when prompted
+2. Enter your Steam password when prompted (unless you've saved it in the config)
 3. If you have Steam Guard enabled, you'll be asked for your code
 
 > [!TIP]
@@ -110,31 +110,48 @@ Once farming has started, you can use these commands:
 - `stop` - Stop farming and return to the main menu
 - `help` - Show available commands
 
-## Creating and Managing Presets
+## Configuration
 
-Presets allow you to save different configurations for different accounts or sets of games. This is especially useful if you have multiple Steam accounts or want to farm different sets of games at different times.
+The application uses a `user-config.json` file to store your settings. When you first run the application, it will create a template file that looks like this:
 
-### Creating a Preset
+```json
+{
+  "accountName": "YOUR_ACCOUNT_NAME_HERE",
+  "sharedSecret": "THIS_IS_OPTIONAL",
+  "games": [
+    {
+      "appId": 221410,
+      "name": "Steam for Linux"
+    },
+    {
+      "appId": 730,
+      "name": "CS2"
+    }
+  ],
+  "rememberPassword": false,
+  "password": "YOUR_PASSWORD_HERE",
+  "name": "YOUR_ACCOUNT_NAME_HERE"
+}
+```
 
-1. First, make sure you've added your account details and games to the current configuration
-2. From the main menu, select "Save Current Config as Preset"
-3. Enter a unique ID (letters, numbers, and hyphens only)
-4. Enter a name for your preset
+### Configuration Options
 
-### Loading a Preset
+- **accountName**: Your Steam username
+- **sharedSecret**: Your Steam Guard shared secret (optional, for automatic 2FA)
+- **games**: Array of games to farm (AppID and name)
+- **rememberPassword**: Whether to save your password in the config file
+- **password**: Your Steam password (only used if rememberPassword is true)
+- **name**: Display name for your configuration
 
-1. From the main menu, select "Load Preset"
-2. Choose the preset you want to load from the list
-3. The preset will be loaded and ready to use
+> [!IMPORTANT]
+> Replace the placeholder values with your actual Steam account details. The application will not work with the default placeholder values.
 
-### Deleting a Preset
+### Finding Game AppIDs
 
-1. From the main menu, select "Delete Preset"
-2. Choose the preset you want to delete
-3. Confirm the deletion
-
-> [!CAUTION]
-> Deleting a preset cannot be undone. Make sure you really want to delete it before confirming.
+You can find Steam AppIDs by:
+1. Going to the game's Steam store page
+2. Looking at the URL - the number after `/app/` is the AppID
+3. Using websites like SteamDB to search for games
 
 ## Steam Guard Authentication
 
@@ -147,7 +164,7 @@ If you have Steam Guard enabled on your account, you'll be prompted for your aut
 For automatic 2FA code generation, you can configure your shared secret:
 
 1. Obtain your shared secret (this requires access to your Steam Guard setup)
-2. Add it to your configuration or preset
+2. Add it to your configuration file
 3. The application will generate codes automatically
 
 > [!WARNING]
@@ -175,10 +192,10 @@ steam-playtime-farmer/
 │   │   ├── events.ts
 │   │   └── steam.ts
 │   └── main.ts
-├── presets/
 ├── dist/
 ├── package.json
 ├── tsconfig.json
+├── user-config.json
 ├── LICENSE
 └── README.md
 ```
@@ -186,7 +203,7 @@ steam-playtime-farmer/
 ### Key Components
 
 - **Steam Client**: Handles authentication and game farming
-- **Config Manager**: Manages user configuration and presets
+- **Config Manager**: Manages user configuration
 - **User Interface**: Provides the command-line interface
 - **Session Manager**: Handles saving/loading Steam sessions
 - **Connection Manager**: Manages reconnection logic
@@ -244,7 +261,7 @@ npm run clean
 
 #### "Error: Incorrect password or invalid credentials"
 
-- Double-check your Steam username and password
+- Double-check your Steam username and password in the config file
 - Make sure you're entering the correct Steam Guard code
 - Try logging in through the Steam client to verify your credentials
 
@@ -258,6 +275,12 @@ npm run clean
 
 - This usually happens when the application loses focus during login
 - Restart the application and try again
+
+#### "Configuration is not ready for farming"
+
+- Make sure you've edited the `user-config.json` file with your actual Steam account details
+- Replace all placeholder values like "YOUR_ACCOUNT_NAME_HERE" with real values
+- Ensure you have at least one game configured in the games array
 
 #### "Command not found: tsc"
 
@@ -294,13 +317,13 @@ No, the application only tells Steam you're playing the games - it doesn't actua
 <details>
 <summary>Can I use this with multiple Steam accounts?</summary>
 
-Yes, you can create different presets for different accounts. Each preset can have its own account credentials and game list.
+You can use this with multiple accounts by creating different configuration files or manually editing the config file each time you want to switch accounts.
 </details>
 
 <details>
 <summary>Is my Steam password stored securely?</summary>
 
-Your password is only stored if you enable the "Remember Password" option. It's stored locally on your computer in plain text, so only enable this option if your computer is secure and you trust the environment.
+Your password is only stored if you enable the "rememberPassword" option in the config file. It's stored locally on your computer in plain text, so only enable this option if your computer is secure and you trust the environment.
 </details>
 
 <details>
@@ -319,6 +342,12 @@ Farming playtime can help you earn trading cards for eligible games, which can b
 <summary>Can I still use Steam normally while farming?</summary>
 
 Yes, you can still use Steam normally while the farmer is running. However, your status will show that you're playing the games being farmed.
+</details>
+
+<details>
+<summary>How do I add or remove games from farming?</summary>
+
+Edit the `user-config.json` file and modify the "games" array. Add or remove game objects with "appId" and "name" properties. You'll need to restart the application for changes to take effect.
 </details>
 
 ## License

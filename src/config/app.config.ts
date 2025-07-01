@@ -14,11 +14,10 @@ export const appConfig: AppConfiguration = {
   appName: 'Steam Playtime Farmer',
   
   // Application version
-  version: '0.3.0',
+  version: '0.4.0',
   
   // File paths for various application data
   paths: {
-    presetsDir: path.join(rootDir, 'presets'),
     configFile: path.join(rootDir, 'user-config.json'),
     sessionFile: path.join(rootDir, 'steam-session.dat'),
   },
@@ -35,19 +34,28 @@ export const appConfig: AppConfiguration = {
     
     // Steam client options
     client: {
-      promptSteamGuardCode: false,
       autoRelogin: false,
     },
   },
 };
 
-// Default user configuration (will be saved to configFileName)
+// Default user configuration template (will be saved to configFileName)
 export const defaultConfig: UserConfig = {
-  accountName: '',
-  sharedSecret: '',
-  games: [],
+  accountName: 'YOUR_ACCOUNT_NAME_HERE',
+  sharedSecret: 'THIS_IS_OPTIONAL',
+  games: [
+    {
+      appId: 221410,
+      name: 'Steam for Linux'
+    },
+    {
+      appId: 730,
+      name: 'CS2'
+    }
+  ],
   rememberPassword: false,
-  password: '',
+  password: 'YOUR_PASSWORD_HERE',
+  name: 'YOUR_ACCOUNT_NAME_HERE'
 };
 
 export default { appConfig, defaultConfig };

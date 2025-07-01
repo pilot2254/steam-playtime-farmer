@@ -4,12 +4,6 @@ import { createSteamClient } from './modules/steam-client.js';
 import { createConfigManager } from './modules/config-manager.js';
 import { createUserInterface } from './modules/user-interface.js';
 import { appConfig } from './config/app.config.js';
-import { existsSync, mkdirSync } from 'fs';
-
-// Ensure presets directory exists before starting
-if (!existsSync(appConfig.paths.presetsDir)) {
-  mkdirSync(appConfig.paths.presetsDir, { recursive: true });
-}
 
 // Initialize core modules
 const configManager = createConfigManager();
@@ -25,13 +19,6 @@ steamClient.configureReconnect({
 // Display application header
 console.log(`===== ${appConfig.appName} v${appConfig.version} =====`);
 console.log(`Automatic reconnection enabled (max ${appConfig.steam.reconnect.maxAttempts} attempts)`);
-
-// Fix existing presets that might be missing the name field
-configManager.fixPresets().then((fixedCount) => {
-  if (fixedCount > 0) {
-    console.log(`Fixed ${fixedCount} presets with missing names.`);
-  }
-});
 
 // Load saved configuration and start the UI
 configManager

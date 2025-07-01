@@ -1,6 +1,6 @@
 {
   "name": "steam-playtime-farmer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A simple Node.js application for farming playtime across multiple Steam games simultaneously.",
   "main": "dist/main.js",
   "type": "module",
