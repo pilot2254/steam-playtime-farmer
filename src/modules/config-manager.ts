@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import { appConfig, defaultConfig } from '../config/app.config.js';
 import type { UserConfig } from '../types/config.js';
-import type { SteamGame } from '../types/steam.js';
 
 // Configuration file path
 const CONFIG_FILE = appConfig.paths.configFile;
@@ -77,30 +76,6 @@ export function createConfigManager() {
     async update(newConfig: Partial<UserConfig>): Promise<boolean> {
       config = { ...config, ...newConfig };
       return this.save();
-    },
-
-    // Add a game to the configuration
-    async addGame(appId: number, name: string): Promise<boolean> {
-      // Check if game already exists
-      const existingIndex = config.games.findIndex((game) => game.appId === appId);
-      if (existingIndex !== -1) {
-        console.log(`Game with AppID ${appId} already exists.`);
-        return false;
-      }
-
-      config.games.push({
-        appId,
-        name: name || `Game ${appId}`,
-      });
-      return this.save();
-    },
-
-    // Remove a game from the configuration
-    async removeGame(index: number): Promise<SteamGame | false> {
-      if (index < 0 || index >= config.games.length) return false;
-      const removed = config.games.splice(index, 1)[0];
-      await this.save();
-      return removed;
     },
 
     // Check if configuration is valid for farming
