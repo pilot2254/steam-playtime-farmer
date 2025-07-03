@@ -29,6 +29,7 @@ export function createSteamClient() {
   let isFarming = false;
   let currentGames: number[] = [];
   let lastLoginDetails: SteamLoginDetails | null = null;
+  let activeTimeouts: NodeJS.Timeout[] = [];
 
   connectionManager.registerCallbacks({
     onReconnecting: (attempt, maxAttempts, delay) => {
@@ -44,6 +45,11 @@ export function createSteamClient() {
       eventManager.trigger('reconnectFailed', reason);
     },
   });
+
+  function clearActiveTimeouts(): void {
+    activeTimeouts.forEach(timeout => clearTimeout(timeout));
+    activeTimeouts = [];
+  }
 
   function setupEvents(): void {
     client.removeAllListeners();
@@ -150,10 +156,12 @@ export function createSteamClient() {
         client.gamesPlayed(currentGames[0]);
       }
 
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         const playingGames = (client as any)._playingAppIds || [];
         console.log(`Now playing: ${playingGames.join(', ')}`);
       }, 2000);
+      
+      activeTimeouts.push(timeout);
 
       return true;
     } catch (err) {
@@ -169,7 +177,6 @@ export function createSteamClient() {
     const loginDetails: any = {
       accountName,
       password,
-      rememberPassword: true,
     };
 
     if (sharedSecret && sharedSecret.length > 5) {
@@ -201,6 +208,7 @@ export function createSteamClient() {
     login: (accountName: string, password?: string, sharedSecret?: string): void => {
       isFarming = false;
       currentGames = [];
+      clearActiveTimeouts();
       connectionManager.reset();
       login(accountName, password, sharedSecret);
     },
@@ -224,7 +232,8 @@ export function createSteamClient() {
 
       if (client.steamID) {
         console.log('Starting to farm games...');
-        setTimeout(() => updateGamesPlayed(), 1000);
+        const timeout = setTimeout(() => updateGamesPlayed(), 1000);
+        activeTimeouts.push(timeout);
         return true;
       } else {
         console.error('Not logged in to Steam. Cannot start farming.');
@@ -233,6 +242,7 @@ export function createSteamClient() {
     },
 
     stopFarming: (): boolean => {
+      clearActiveTimeouts();
       connectionManager.reset();
 
       if (client.steamID) {
