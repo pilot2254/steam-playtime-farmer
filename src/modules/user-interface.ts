@@ -12,6 +12,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
   });
 
   let isFarming = false;
+  let loginTimeout: NodeJS.Timeout | null = null;
 
   const clearConsole = (): void => {
     process.stdout.write('\x1Bc');
@@ -32,8 +33,16 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     process.exit(0);
   };
 
+  function clearLoginTimeout(): void {
+    if (loginTimeout) {
+      clearTimeout(loginTimeout);
+      loginTimeout = null;
+    }
+  }
+
   function setupFarmingEventHandlers(): void {
     const removeGuardHandler = steamClient.on('steamGuard', async (domain, callback, lastCodeWrong) => {
+      clearLoginTimeout(); // Clear timeout when Steam Guard is requested
       const domainText = domain ? ` for domain ${domain}` : '';
       const wrongText = lastCodeWrong ? ' (previous code was wrong)' : '';
       const code = await question(`Steam Guard code needed${domainText}${wrongText}: `);
@@ -41,6 +50,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     });
 
     steamClient.on('loggedOn', () => {
+      clearLoginTimeout(); // Clear timeout on successful login
       removeGuardHandler();
       const gameIds = configManager.get().games.map((game) => game.appId);
       steamClient.startFarming(gameIds);
@@ -49,6 +59,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     });
 
     steamClient.on('error', (err) => {
+      clearLoginTimeout(); // Clear timeout on error
       if (err.eresult === 5 || err.message?.includes('password') || err.message?.includes('credentials')) {
         console.error('\nError: Incorrect password or invalid credentials');
         console.log('Please check your password and try again.');
@@ -112,12 +123,13 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     const sharedSecret = config.sharedSecret !== 'THIS_IS_OPTIONAL' ? config.sharedSecret : undefined;
     steamClient.login(config.accountName, password, sharedSecret);
 
-    setTimeout(() => {
+    // Set timeout only if no Steam Guard is needed
+    loginTimeout = setTimeout(() => {
       if (!isFarming && !steamClient.getStatus().connected) {
         console.log('Login attempt timed out or failed. Check your credentials.');
         waitForEnter('\nPress Enter to return to main menu...').then(showMainMenu);
       }
-    }, 10000);
+    }, 15000); // Increased to 15 seconds to give more time for Steam Guard
   }
 
   function showFarmingInterface(): void {
