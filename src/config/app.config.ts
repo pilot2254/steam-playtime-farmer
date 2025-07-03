@@ -14,7 +14,7 @@ export const appConfig: AppConfiguration = {
   appName: 'Steam Playtime Farmer',
   
   // Application version
-  version: '0.4.0',
+  version: '0.6.0',
   
   // File paths for various application data
   paths: {
@@ -53,9 +53,7 @@ export const defaultConfig: UserConfig = {
       name: 'CS2'
     }
   ],
-  rememberPassword: false,
-  password: 'YOUR_PASSWORD_HERE',
-  name: 'YOUR_ACCOUNT_NAME_HERE'
+  password: 'YOUR_PASSWORD_HERE'
 };
 
 export default { appConfig, defaultConfig };

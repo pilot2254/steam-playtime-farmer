@@ -96,8 +96,9 @@ When you first run the application, it will create a default configuration file 
 ### Logging In
 
 1. Select "Start Farming" from the main menu
-2. Enter your Steam password when prompted (unless you've saved it in the config)
-3. If you have Steam Guard enabled, you'll be asked for your code
+2. If you have a password configured in the config file, it will be used automatically
+3. If no password is configured, you'll be prompted to enter it
+4. If you have Steam Guard enabled, you'll be asked for your code
 
 > [!TIP]
 > If you have a shared secret configured, the application will automatically generate 2FA codes for you.
@@ -128,20 +129,15 @@ The application uses a `user-config.json` file to store your settings. When you 
       "name": "CS2"
     }
   ],
-  "rememberPassword": false,
-  "password": "YOUR_PASSWORD_HERE",
-  "name": "YOUR_ACCOUNT_NAME_HERE"
+  "password": "YOUR_PASSWORD_HERE"
 }
 ```
 
 ### Configuration Options
 
-- **accountName**: Your Steam username
 - **sharedSecret**: Your Steam Guard shared secret (optional, for automatic 2FA)
 - **games**: Array of games to farm (AppID and name)
-- **rememberPassword**: Whether to save your password in the config file
-- **password**: Your Steam password (only used if rememberPassword is true)
-- **name**: Display name for your configuration
+- **password**: Your Steam password (optional, will prompt if not provided)
 
 > [!IMPORTANT]
 > Replace the placeholder values with your actual Steam account details. The application will not work with the default placeholder values.
@@ -183,7 +179,6 @@ steam-playtime-farmer/
 │   │   ├── config-manager.ts
 │   │   ├── connection-manager.ts
 │   │   ├── event-manager.ts
-│   │   ├── session-manager.ts
 │   │   ├── steam-client.ts
 │   │   └── user-interface.ts
 │   ├── types/
@@ -205,7 +200,6 @@ steam-playtime-farmer/
 - **Steam Client**: Handles authentication and game farming
 - **Config Manager**: Manages user configuration
 - **User Interface**: Provides the command-line interface
-- **Session Manager**: Handles saving/loading Steam sessions
 - **Connection Manager**: Manages reconnection logic
 - **Event Manager**: Provides an event system for communication
 
@@ -323,7 +317,7 @@ You can use this with multiple accounts by creating different configuration file
 <details>
 <summary>Is my Steam password stored securely?</summary>
 
-Your password is only stored if you enable the "rememberPassword" option in the config file. It's stored locally on your computer in plain text, so only enable this option if your computer is secure and you trust the environment.
+Your password is stored locally on your computer in plain text if you choose to include it in the config file. Only include your password in the config if your computer is secure and you trust the environment. If you don't include it, you'll be prompted to enter it each time you start farming.
 </details>
 
 <details>

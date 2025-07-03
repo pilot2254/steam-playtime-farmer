@@ -98,13 +98,12 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
     let password = '';
     
-    // Check if password is saved and valid
-    if (config.rememberPassword && 
-        config.password && 
+    // Check if password is configured and not a placeholder
+    if (config.password && 
         config.password !== 'YOUR_PASSWORD_HERE' && 
         config.password.trim() !== '') {
       password = config.password;
-      console.log('Using saved password from configuration...');
+      console.log('Using password from configuration...');
     } else {
       password = await question('Enter your Steam password: ');
     }
@@ -179,7 +178,6 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     console.log(`Account: ${config.accountName}`);
     console.log(`Games: ${config.games?.length || 0} configured`);
     console.log(`2FA: ${config.sharedSecret && config.sharedSecret !== 'THIS_IS_OPTIONAL' ? 'Configured' : 'Not configured'}`);
-    console.log(`Remember Password: ${config.rememberPassword ? 'Yes' : 'No'}`);
     
     if (!configManager.isValidForFarming()) {
       console.log('\nConfiguration Status: Not ready for farming');
@@ -233,7 +231,6 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     
     console.log(`Account Name: ${config.accountName}`);
     console.log(`Shared Secret: ${config.sharedSecret ? (config.sharedSecret === 'THIS_IS_OPTIONAL' ? 'Not configured' : 'Configured') : 'Not configured'}`);
-    console.log(`Remember Password: ${config.rememberPassword ? 'Yes' : 'No'}`);
     console.log(`Password: ${config.password && config.password !== 'YOUR_PASSWORD_HERE' ? 'Configured' : 'Not configured'}`);
     
     console.log('\nConfigured Games:');

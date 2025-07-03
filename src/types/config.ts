@@ -5,9 +5,7 @@ export interface UserConfig {
   accountName: string;
   sharedSecret: string;
   games: SteamGame[];
-  rememberPassword: boolean;
   password: string;
-  name: string;
 }
 
 export interface AppPaths {
