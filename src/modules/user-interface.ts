@@ -96,9 +96,13 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     setupFarmingEventHandlers();
     console.log('\n===== Starting Playtime Farming =====');
 
-    // Fix: Check if password is properly configured
     let password = '';
-    if (config.rememberPassword && config.password && config.password !== 'YOUR_PASSWORD_HERE') {
+    
+    // Check if password is saved and valid
+    if (config.rememberPassword && 
+        config.password && 
+        config.password !== 'YOUR_PASSWORD_HERE' && 
+        config.password.trim() !== '') {
       password = config.password;
       console.log('Using saved password from configuration...');
     } else {
