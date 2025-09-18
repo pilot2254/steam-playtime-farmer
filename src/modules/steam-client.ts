@@ -30,6 +30,7 @@ export function createSteamClient() {
   let currentGames: number[] = [];
   let lastLoginDetails: SteamLoginDetails | null = null;
   let activeTimeouts: NodeJS.Timeout[] = [];
+  let isActive = false; // Add flag to track if farming is active
 
   connectionManager.registerCallbacks({
     onReconnecting: (attempt, maxAttempts, delay) => {
@@ -143,6 +144,11 @@ export function createSteamClient() {
       return false;
     }
 
+    // Check if farming is still active before proceeding
+    if (!isActive) {
+      return false;
+    }
+
     try {
       console.log(`Attempting to play ${currentGames.length} games...`);
 
@@ -157,8 +163,11 @@ export function createSteamClient() {
       }
 
       const timeout = setTimeout(() => {
-        const playingGames = (client as any)._playingAppIds || [];
-        console.log(`Now playing: ${playingGames.join(', ')}`);
+        // Check again if farming is still active before logging
+        if (isActive) {
+          const playingGames = (client as any)._playingAppIds || [];
+          console.log(`Now playing: ${playingGames.join(', ')}`);
+        }
       }, 2000);
       
       activeTimeouts.push(timeout);
@@ -208,6 +217,7 @@ export function createSteamClient() {
     login: (accountName: string, password?: string, sharedSecret?: string): void => {
       isFarming = false;
       currentGames = [];
+      isActive = false; // Reset active flag
       clearActiveTimeouts();
       connectionManager.reset();
       login(accountName, password, sharedSecret);
@@ -232,6 +242,7 @@ export function createSteamClient() {
 
       if (client.steamID) {
         console.log('Starting to farm games...');
+        isActive = true; // Set active flag before starting
         const timeout = setTimeout(() => updateGamesPlayed(), 1000);
         activeTimeouts.push(timeout);
         return true;
@@ -242,6 +253,7 @@ export function createSteamClient() {
     },
 
     stopFarming: (): boolean => {
+      isActive = false; // Set inactive flag first to prevent new messages
       clearActiveTimeouts();
       connectionManager.reset();
 
