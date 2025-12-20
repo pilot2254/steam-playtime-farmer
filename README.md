@@ -2,6 +2,13 @@
 
 Farm playtime hours on multiple Steam games simultaneously without actually playing them.
 
+> [!WARNING]
+> While Steam allows playtime farming using this still may violate Steam's ToS because of trading card farming. Use at your own risk. It won't cause VAC bans (doesn't modify games), but Steam could take action on your account.
+>
+> But I honestly dont care what are you doing with this tool and I'm not responsible for any actions on your account.
+>
+> Also, just a quick note, you can farm up to 32 games at once (including the custom status -> `31 games + 1 custom status = 32 steam applications`)
+
 ## Features
 
 - Farm multiple games at once
@@ -22,26 +29,8 @@ npm install
 
 ## Configuration
 
-Edit `user-config.json`:
-
-```json
-{
-  "accountName": "your_steam_username",
-  "sharedSecret": "",
-  "games": [
-    {
-      "appId": 730,
-      "name": "Counter-Strike 2"
-    },
-    {
-      "appId": 440,
-      "name": "Team Fortress 2"
-    }
-  ],
-  "password": "your_password",
-  "customStatus": "Grinding cards 🎮"
-}
-```
+1. Rename `user-config.json.example` to `user-config.json`
+2. Edit `user-config.json` file as you wish
 
 ### Config Options
 
@@ -60,7 +49,7 @@ https://store.steampowered.com/app/730/
                                   AppID
 ```
 
-Or use [SteamDB](https://steamdb.info/).
+Or use [SteamDB](https://steamdb.info/). (recommended)
 
 ## Usage
 
@@ -80,7 +69,7 @@ npm start
 When you set `customStatus` in config, it displays as a non-Steam game at the top of your playing status, while your actual games farm playtime below it.
 
 Example:
-- Profile shows: "In non-Steam game: Grinding cards 🎮"
+- Profile shows: "In non-Steam game: My custom status"
 - Games CS2, TF2, Dota 2 accumulate playtime
 
 Leave `customStatus` as empty string `""` for no custom status.
@@ -94,10 +83,6 @@ If you have Steam Guard, you'll be prompted for the code when logging in.
 1. Get your shared secret from your Steam Guard setup
 2. Add it to `sharedSecret` in config
 3. 2FA codes generate automatically
-
-## Warning
-
-Using this may violate Steam's ToS. Use at your own risk. Won't cause VAC bans (doesn't modify games), but Steam could take action on your account.
 
 ## Troubleshooting
 
@@ -116,23 +101,6 @@ Using this may violate Steam's ToS. Use at your own risk. Won't cause VAC bans (
 **Login timeout**
 - Make sure you're entering Steam Guard code if prompted
 - Check credentials are correct
-
-## Development
-
-Build:
-```bash
-npm run build
-```
-
-Watch mode:
-```bash
-npm run dev
-```
-
-Clean build:
-```bash
-npm run clean
-```
 
 ## License
 
