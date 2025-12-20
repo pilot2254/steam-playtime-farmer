@@ -4,7 +4,6 @@ import readline from 'readline';
 import type { ConfigManager } from './config-manager.js';
 import type { SteamClient } from './steam-client.js';
 
-// Creates a user interface for the application
 export function createUserInterface(configManager: ConfigManager, steamClient: SteamClient) {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -42,7 +41,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
   function setupFarmingEventHandlers(): void {
     const removeGuardHandler = steamClient.on('steamGuard', async (domain, callback, lastCodeWrong) => {
-      clearLoginTimeout(); // Clear timeout when Steam Guard is requested
+      clearLoginTimeout();
       const domainText = domain ? ` for domain ${domain}` : '';
       const wrongText = lastCodeWrong ? ' (previous code was wrong)' : '';
       const code = await question(`Steam Guard code needed${domainText}${wrongText}: `);
@@ -50,16 +49,18 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     });
 
     steamClient.on('loggedOn', () => {
-      clearLoginTimeout(); // Clear timeout on successful login
+      clearLoginTimeout();
       removeGuardHandler();
-      const gameIds = configManager.get().games.map((game) => game.appId);
-      steamClient.startFarming(gameIds);
+      const config = configManager.get();
+      const gameIds = config.games.map((game) => game.appId);
+      const customStatus = config.customStatus;
+      steamClient.startFarming(gameIds, customStatus);
       isFarming = true;
       showFarmingInterface();
     });
 
     steamClient.on('error', (err) => {
-      clearLoginTimeout(); // Clear timeout on error
+      clearLoginTimeout();
       if (err.eresult === 5 || err.message?.includes('password') || err.message?.includes('credentials')) {
         console.error('\nError: Incorrect password or invalid credentials');
         console.log('Please check your password and try again.');
@@ -82,8 +83,10 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
     steamClient.on('reconnected', () => {
       console.log('Reconnected to Steam! Resuming farming...');
-      const gameIds = configManager.get().games.map((game) => game.appId);
-      steamClient.startFarming(gameIds);
+      const config = configManager.get();
+      const gameIds = config.games.map((game) => game.appId);
+      const customStatus = config.customStatus;
+      steamClient.startFarming(gameIds, customStatus);
     });
 
     steamClient.on('reconnectFailed', () => {
@@ -109,7 +112,6 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
     let password = '';
     
-    // Check if password is configured and not a placeholder
     if (config.password && 
         config.password !== 'YOUR_PASSWORD_HERE' && 
         config.password.trim() !== '') {
@@ -123,13 +125,12 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     const sharedSecret = config.sharedSecret !== 'THIS_IS_OPTIONAL' ? config.sharedSecret : undefined;
     steamClient.login(config.accountName, password, sharedSecret);
 
-    // Set timeout only if no Steam Guard is needed
     loginTimeout = setTimeout(() => {
       if (!isFarming && !steamClient.getStatus().connected) {
         console.log('Login attempt timed out or failed. Check your credentials.');
         waitForEnter('\nPress Enter to return to main menu...').then(showMainMenu);
       }
-    }, 15000); // Increased to 15 seconds to give more time for Steam Guard
+    }, 15000);
   }
 
   function showFarmingInterface(): void {
@@ -139,6 +140,9 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
 
     console.log('\n===== Playtime Farming Active =====');
     console.log(`Account: ${config.accountName}`);
+    if (config.customStatus) {
+      console.log(`Custom Status: "${config.customStatus}"`);
+    }
     console.log(`Farming ${games.length} games:`);
     games.forEach((game) => console.log(`- ${game.name} (${game.appId})`));
 
@@ -157,6 +161,9 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
             console.log(`\nConnection: ${status.connected ? 'Connected' : 'Disconnected'}`);
             console.log(`Account: ${status.accountName || config.accountName}`);
             console.log(`Currently farming: ${status.playingAppIds.join(', ') || 'None'}`);
+            if (config.customStatus) {
+              console.log(`Custom Status: "${config.customStatus}"`);
+            }
             break;
 
           case 'stop':
@@ -190,6 +197,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     console.log(`Account: ${config.accountName}`);
     console.log(`Games: ${config.games?.length || 0} configured`);
     console.log(`2FA: ${config.sharedSecret && config.sharedSecret !== 'THIS_IS_OPTIONAL' ? 'Configured' : 'Not configured'}`);
+    console.log(`Custom Status: ${config.customStatus ? `"${config.customStatus}"` : 'Not set'}`);
     
     if (!configManager.isValidForFarming()) {
       console.log('\nConfiguration Status: Not ready for farming');
@@ -244,6 +252,7 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     console.log(`Account Name: ${config.accountName}`);
     console.log(`Shared Secret: ${config.sharedSecret ? (config.sharedSecret === 'THIS_IS_OPTIONAL' ? 'Not configured' : 'Configured') : 'Not configured'}`);
     console.log(`Password: ${config.password && config.password !== 'YOUR_PASSWORD_HERE' ? 'Configured' : 'Not configured'}`);
+    console.log(`Custom Status: ${config.customStatus ? `"${config.customStatus}"` : 'Not set'}`);
     
     console.log('\nConfigured Games:');
     if (config.games && config.games.length > 0) {
