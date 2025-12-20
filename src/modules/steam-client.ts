@@ -1,5 +1,4 @@
 // Steam Client Module
-// Handles Steam authentication, game farming, and connection management
 import SteamUser from 'steam-user';
 import SteamTotp from 'steam-totp';
 import path from 'path';
@@ -31,25 +30,24 @@ export function createSteamClient() {
   let customStatus: string | undefined;
   let lastLoginDetails: SteamLoginDetails | null = null;
   let activeTimeouts: NodeJS.Timeout[] = [];
-  let isActive = false;
 
   connectionManager.registerCallbacks({
     onReconnecting: (attempt, maxAttempts, delay) => {
-      console.log(`Reconnecting to Steam (${attempt}/${maxAttempts}) in ${Math.round(delay / 1000)} seconds...`);
+      console.log(`Reconnecting (${attempt}/${maxAttempts}) in ${Math.round(delay / 1000)}s...`);
       eventManager.trigger('reconnecting', attempt, maxAttempts, delay);
     },
     onReconnected: () => {
-      console.log('Successfully reconnected to Steam!');
+      console.log('Reconnected!');
       eventManager.trigger('reconnected');
     },
     onReconnectFailed: (reason) => {
-      console.log(`Failed to reconnect to Steam after multiple attempts. Reason: ${reason || 'Unknown'}`);
+      console.log(`Reconnect failed: ${reason || 'Unknown'}`);
       eventManager.trigger('reconnectFailed', reason);
     },
   });
 
-  function clearActiveTimeouts(): void {
-    activeTimeouts.forEach(timeout => clearTimeout(timeout));
+  function clearTimeouts(): void {
+    activeTimeouts.forEach(t => clearTimeout(t));
     activeTimeouts = [];
   }
 
@@ -61,10 +59,10 @@ export function createSteamClient() {
     client.on('disconnected', handleDisconnected);
   }
 
-  function handleLoggedOn(details: any): void {
+  function handleLoggedOn(): void {
     const accountName = client.accountInfo?.name || lastLoginDetails?.accountName || 'Unknown';
     connectionManager.setAccountName(accountName);
-    console.log(`Successfully logged in as ${accountName}`);
+    console.log(`Logged in as ${accountName}`);
 
     connectionManager.setState({
       connected: true,
@@ -78,7 +76,7 @@ export function createSteamClient() {
 
     client.setPersona(SteamUser.EPersonaState.Online);
     isFarming = true;
-    eventManager.trigger('loggedOn', details);
+    eventManager.trigger('loggedOn', {});
     eventManager.clear('steamGuard');
   }
 
@@ -86,7 +84,7 @@ export function createSteamClient() {
     if (eventManager.hasHandlers('steamGuard')) {
       eventManager.trigger('steamGuard', domain, callback, lastCodeWrong);
     } else {
-      console.log('Steam Guard required but no handler registered. Please restart the application.');
+      console.log('Steam Guard required but no handler. Restart the app.');
       client.logOff();
     }
   }
@@ -95,15 +93,15 @@ export function createSteamClient() {
     const errorDetails: SteamErrorDetails = {
       message: err.message || 'Unknown error',
       eresult: err.eresult,
-      cause: err.cause || 'Unknown cause',
+      cause: err.cause || 'Unknown',
     };
-    console.error('Steam client error:', errorDetails.message);
+    console.error('Steam error:', errorDetails.message);
     eventManager.trigger('error', errorDetails);
   }
 
   function handleDisconnected(eresult: any, msg?: string): void {
     const reason = msg || eresult.toString();
-    console.log(`Disconnected from Steam: ${reason}`);
+    console.log(`Disconnected: ${reason}`);
 
     connectionManager.setState({
       connected: false,
@@ -113,68 +111,35 @@ export function createSteamClient() {
     eventManager.trigger('disconnected', eresult, msg || '');
 
     if (isFarming && lastLoginDetails) {
-      console.log('Attempting to reconnect...');
       connectionManager.startReconnect(() => reconnect());
     }
   }
 
   function reconnect(): boolean {
-    if (!isFarming) {
-      console.log('Farming stopped, not attempting to reconnect.');
-      return false;
-    }
-
-    if (lastLoginDetails) {
-      console.log('Reconnecting using credentials...');
-      login(lastLoginDetails.accountName, lastLoginDetails.password, lastLoginDetails.sharedSecret);
-      return true;
-    }
-
-    console.log('No credentials available for reconnection.');
-    return false;
+    if (!isFarming || !lastLoginDetails) return false;
+    login(lastLoginDetails.accountName, lastLoginDetails.password, lastLoginDetails.sharedSecret);
+    return true;
   }
 
-  function updateGamesPlayed(): boolean {
-    if (!client.steamID) {
-      console.log('Not logged in to Steam. Cannot update games.');
-      return false;
-    }
-
-    if (currentGames.length === 0 && !customStatus) {
-      console.log('No games to play.');
-      return false;
-    }
-
-    if (!isActive) {
-      return false;
-    }
+  function updateGames(): boolean {
+    if (!client.steamID || !isFarming) return false;
+    if (currentGames.length === 0 && !customStatus) return false;
 
     try {
-      if (customStatus && customStatus.trim() !== '') {
-        console.log(`Setting custom status: "${customStatus}" + ${currentGames.length} games`);
-        client.gamesPlayed([
-          customStatus,
-          ...currentGames
-        ]);
+      if (customStatus && customStatus.trim()) {
+        client.gamesPlayed([customStatus, ...currentGames]);
       } else {
-        console.log(`Playing ${currentGames.length} game(s)`);
-        if (currentGames.length === 1) {
-          client.gamesPlayed(currentGames[0]);
-        } else {
-          client.gamesPlayed(currentGames);
-        }
+        client.gamesPlayed(currentGames.length === 1 ? currentGames[0] : currentGames);
       }
 
       const timeout = setTimeout(() => {
-        if (isActive) {
-          const playingGames = (client as any)._playingAppIds || [];
-          const statusText = customStatus ? ` (Custom status: "${customStatus}")` : '';
-          console.log(`Active games: ${playingGames.join(', ')}${statusText}`);
+        if (isFarming) {
+          const games = (client as any)._playingAppIds || [];
+          console.log(`Playing: ${games.join(', ')}${customStatus ? ` ("${customStatus}")` : ''}`);
         }
       }, 2000);
       
       activeTimeouts.push(timeout);
-
       return true;
     } catch (err) {
       console.error('Error updating games:', err);
@@ -186,21 +151,18 @@ export function createSteamClient() {
     lastLoginDetails = { accountName, password, sharedSecret };
     setupEvents();
 
-    const loginDetails: any = {
-      accountName,
-      password,
-    };
+    const loginDetails: any = { accountName, password };
 
     if (sharedSecret && sharedSecret.length > 5) {
       try {
         loginDetails.twoFactorCode = SteamTotp.generateAuthCode(sharedSecret);
-        console.log('Generated 2FA code automatically:', loginDetails.twoFactorCode);
+        console.log('Generated 2FA code:', loginDetails.twoFactorCode);
       } catch (err) {
-        console.log('Failed to generate 2FA code. You may need to enter it manually.');
+        console.log('Failed to generate 2FA code.');
       }
     }
 
-    console.log('Logging in to Steam...');
+    console.log('Logging in...');
     client.logOn(loginDetails);
   }
 
@@ -211,7 +173,7 @@ export function createSteamClient() {
       connected: connectionManager.getState().connected,
       reconnecting: connectionManager.getState().reconnecting,
       loggedOn: !!client.steamID,
-      steamID: client.steamID ? client.steamID.toString() : null,
+      steamID: client.steamID?.toString() || null,
       playingAppIds: (client as any)._playingAppIds || [],
       currentGames: [...currentGames],
       accountName: connectionManager.getState().accountName,
@@ -220,13 +182,10 @@ export function createSteamClient() {
     login: (accountName: string, password?: string, sharedSecret?: string): void => {
       isFarming = false;
       currentGames = [];
-      isActive = false;
-      clearActiveTimeouts();
+      clearTimeouts();
       connectionManager.reset();
       login(accountName, password, sharedSecret);
     },
-
-    reconnect: (): boolean => reconnect(),
 
     on: <T extends EventName>(event: T, handler: EventHandler<T>): RemoveHandler => 
       eventManager.on(event, handler),
@@ -236,42 +195,35 @@ export function createSteamClient() {
     clearAllHandlers: (...events: EventName[]): void => eventManager.clearAll(...events),
 
     startFarming: (gameIds: number[], status?: string): boolean => {
-      if (!Array.isArray(gameIds)) {
-        console.error('Invalid game IDs provided');
-        return false;
-      }
+      if (!Array.isArray(gameIds)) return false;
 
-      currentGames = gameIds.filter((id) => !isNaN(id));
+      currentGames = gameIds.filter(id => !isNaN(id));
       customStatus = status;
 
-      if (client.steamID) {
-        console.log('Starting to farm games...');
-        if (customStatus && customStatus.trim() !== '') {
-          console.log(`Custom status: "${customStatus}"`);
-        }
-        isActive = true;
-        const timeout = setTimeout(() => updateGamesPlayed(), 1000);
-        activeTimeouts.push(timeout);
-        return true;
-      } else {
-        console.error('Not logged in to Steam. Cannot start farming.');
+      if (!client.steamID) {
+        console.error('Not logged in.');
         return false;
       }
+
+      if (customStatus?.trim()) console.log(`Custom status: "${customStatus}"`);
+      
+      isFarming = true;
+      setTimeout(() => updateGames(), 1000);
+      return true;
     },
 
     stopFarming: (): boolean => {
-      isActive = false;
-      clearActiveTimeouts();
+      clearTimeouts();
       connectionManager.reset();
 
       if (client.steamID) {
         try {
-          console.log('Stopping game farming...');
+          console.log('Stopping farming...');
           client.gamesPlayed([]);
           client.setPersona(SteamUser.EPersonaState.Offline);
           client.logOff();
         } catch (err) {
-          console.error('Error stopping farming:', err);
+          console.error('Error stopping:', err);
         }
       }
 
@@ -284,6 +236,8 @@ export function createSteamClient() {
     configureReconnect: (options: ReconnectOptions): void => {
       connectionManager.configure(options);
     },
+
+    reconnect: (): boolean => reconnect(),
   };
 }
 

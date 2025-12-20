@@ -1,4 +1,4 @@
-// Configuration-related type definitions
+// Configuration types
 import type { SteamGame } from './steam.js';
 
 export interface UserConfig {

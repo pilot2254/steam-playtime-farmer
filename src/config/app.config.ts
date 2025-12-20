@@ -1,5 +1,4 @@
-// Steam Playtime Farmer Configuration
-// This file contains all application-wide configuration settings
+// App Configuration
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { AppConfiguration, UserConfig } from '../types/config.js';
