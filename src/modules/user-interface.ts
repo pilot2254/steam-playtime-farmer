@@ -1,5 +1,4 @@
 // User Interface Module
-// Handles basic user interactions with a simplified interface
 import readline from 'readline';
 import type { ConfigManager } from './config-manager.js';
 import type { SteamClient } from './steam-client.js';
@@ -13,23 +12,15 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
   let isFarming = false;
   let loginTimeout: NodeJS.Timeout | null = null;
 
-  const clearConsole = (): void => {
-    process.stdout.write('\x1Bc');
-    if (process.platform === 'win32') console.clear();
-  };
+  const question = (q: string): Promise<string> => 
+    new Promise(resolve => rl.question(q, resolve));
 
-  const question = (query: string): Promise<string> => 
-    new Promise((resolve) => rl.question(query, resolve));
-
-  const waitForEnter = async (msg = 'Press Enter to continue...'): Promise<void> => {
+  const waitEnter = async (msg = 'Press Enter...'): Promise<void> => {
     await question(msg);
   };
 
-  const exitApplication = (): void => {
-    console.log('\nExiting application...');
-    steamClient.stopFarming();
-    rl.close();
-    process.exit(0);
+  const clearScreen = (): void => {
+    process.stdout.write('\x1Bc');
   };
 
   function clearLoginTimeout(): void {
@@ -39,238 +30,223 @@ export function createUserInterface(configManager: ConfigManager, steamClient: S
     }
   }
 
-  function setupFarmingEventHandlers(): void {
-    const removeGuardHandler = steamClient.on('steamGuard', async (domain, callback, lastCodeWrong) => {
+  function setupEvents(): void {
+    const removeGuard = steamClient.on('steamGuard', async (domain, callback, wrong) => {
       clearLoginTimeout();
-      const domainText = domain ? ` for domain ${domain}` : '';
-      const wrongText = lastCodeWrong ? ' (previous code was wrong)' : '';
-      const code = await question(`Steam Guard code needed${domainText}${wrongText}: `);
+      const domainTxt = domain ? ` for ${domain}` : '';
+      const wrongTxt = wrong ? ' (previous was wrong)' : '';
+      const code = await question(`Steam Guard${domainTxt}${wrongTxt}: `);
       callback(code);
     });
 
     steamClient.on('loggedOn', () => {
       clearLoginTimeout();
-      removeGuardHandler();
+      removeGuard();
       const config = configManager.get();
-      const gameIds = config.games.map((game) => game.appId);
-      const customStatus = config.customStatus;
-      steamClient.startFarming(gameIds, customStatus);
+      steamClient.startFarming(
+        config.games.map(g => g.appId),
+        config.customStatus
+      );
       isFarming = true;
-      showFarmingInterface();
+      showFarming();
     });
 
     steamClient.on('error', (err) => {
       clearLoginTimeout();
-      if (err.eresult === 5 || err.message?.includes('password') || err.message?.includes('credentials')) {
-        console.error('\nError: Incorrect password or invalid credentials');
-        console.log('Please check your password and try again.');
+      if (err.eresult === 5 || err.message?.includes('password')) {
+        console.error('\nIncorrect password or invalid credentials');
       } else {
-        console.error('Steam error:', err.message || 'Unknown error');
+        console.error('Steam error:', err.message || 'Unknown');
       }
-
       setTimeout(() => {
         isFarming = false;
-        showMainMenu();
+        showMenu();
       }, 3000);
     });
 
     steamClient.on('disconnected', () => 
-      console.log('Disconnected from Steam. Attempting to reconnect...'));
+      console.log('Disconnected. Reconnecting...'));
 
-    steamClient.on('reconnecting', (attempt, maxAttempts) =>
-      console.log(`Reconnecting to Steam (${attempt}/${maxAttempts})...`),
-    );
+    steamClient.on('reconnecting', (attempt, max) =>
+      console.log(`Reconnecting (${attempt}/${max})...`));
 
     steamClient.on('reconnected', () => {
-      console.log('Reconnected to Steam! Resuming farming...');
+      console.log('Reconnected! Resuming...');
       const config = configManager.get();
-      const gameIds = config.games.map((game) => game.appId);
-      const customStatus = config.customStatus;
-      steamClient.startFarming(gameIds, customStatus);
+      steamClient.startFarming(
+        config.games.map(g => g.appId),
+        config.customStatus
+      );
     });
 
     steamClient.on('reconnectFailed', () => {
-      console.log('Failed to reconnect after multiple attempts.');
+      console.log('Reconnect failed.');
       isFarming = false;
-      showMainMenu();
+      showMenu();
     });
   }
 
   async function startFarming(): Promise<void> {
-    clearConsole();
+    clearScreen();
     const config = configManager.get();
 
     if (!configManager.isValidForFarming()) {
-      console.log('Configuration is not ready for farming.');
-      console.log('Please edit user-config.json with your Steam account details and games.');
-      await waitForEnter();
-      return showMainMenu();
+      console.log('Config not ready. Edit user-config.json first.');
+      await waitEnter();
+      return showMenu();
     }
 
-    setupFarmingEventHandlers();
-    console.log('\n===== Starting Playtime Farming =====');
+    setupEvents();
+    console.log('\n===== Starting Farming =====');
 
     let password = '';
-    
-    if (config.password && 
-        config.password !== 'YOUR_PASSWORD_HERE' && 
-        config.password.trim() !== '') {
+    if (config.password && config.password !== 'YOUR_PASSWORD_HERE' && config.password.trim()) {
       password = config.password;
-      console.log('Using password from configuration...');
+      console.log('Using saved password...');
     } else {
-      password = await question('Enter your Steam password: ');
+      password = await question('Password: ');
     }
 
-    console.log(`Attempting to login as ${config.accountName}...`);
-    const sharedSecret = config.sharedSecret !== 'THIS_IS_OPTIONAL' ? config.sharedSecret : undefined;
-    steamClient.login(config.accountName, password, sharedSecret);
+    console.log(`Logging in as ${config.accountName}...`);
+    const secret = config.sharedSecret !== 'THIS_IS_OPTIONAL' ? config.sharedSecret : undefined;
+    steamClient.login(config.accountName, password, secret);
 
     loginTimeout = setTimeout(() => {
       if (!isFarming && !steamClient.getStatus().connected) {
-        console.log('Login attempt timed out or failed. Check your credentials.');
-        waitForEnter('\nPress Enter to return to main menu...').then(showMainMenu);
+        console.log('Login timeout. Check credentials.');
+        waitEnter('\nPress Enter...').then(showMenu);
       }
     }, 15000);
   }
 
-  function showFarmingInterface(): void {
-    clearConsole();
+  function showFarming(): void {
+    clearScreen();
     const config = configManager.get();
     const games = config.games || [];
 
-    console.log('\n===== Playtime Farming Active =====');
+    console.log('\n===== Farming Active =====');
     console.log(`Account: ${config.accountName}`);
-    if (config.customStatus) {
-      console.log(`Custom Status: "${config.customStatus}"`);
-    }
-    console.log(`Farming ${games.length} games:`);
-    games.forEach((game) => console.log(`- ${game.name} (${game.appId})`));
+    if (config.customStatus) console.log(`Status: "${config.customStatus}"`);
+    console.log(`Games (${games.length}):`);
+    games.forEach(g => console.log(`- ${g.name} (${g.appId})`));
 
-    console.log('\nCommands:');
-    console.log('status - Check current status');
-    console.log('stop   - Stop farming and return to menu');
-    console.log('help   - Show this help message');
+    console.log('\nCommands: status | stop | help');
 
-    function processCommands(): void {
+    function processCmd(): void {
       rl.once('line', async (input) => {
         const cmd = input.trim().toLowerCase();
 
         switch (cmd) {
           case 'status':
-            const status = steamClient.getStatus();
-            console.log(`\nConnection: ${status.connected ? 'Connected' : 'Disconnected'}`);
-            console.log(`Account: ${status.accountName || config.accountName}`);
-            console.log(`Currently farming: ${status.playingAppIds.join(', ') || 'None'}`);
-            if (config.customStatus) {
-              console.log(`Custom Status: "${config.customStatus}"`);
-            }
+            const s = steamClient.getStatus();
+            console.log(`\nConnected: ${s.connected ? 'Yes' : 'No'}`);
+            console.log(`Account: ${s.accountName || config.accountName}`);
+            console.log(`Farming: ${s.playingAppIds.join(', ') || 'None'}`);
+            if (config.customStatus) console.log(`Status: "${config.customStatus}"`);
             break;
 
           case 'stop':
-            console.log('Stopping farming...');
+            console.log('Stopping...');
             steamClient.stopFarming();
             isFarming = false;
             steamClient.clearAllHandlers('disconnected', 'reconnecting', 'reconnected', 'reconnectFailed');
-            return showMainMenu();
+            return showMenu();
 
           case 'help':
-            console.log('\nAvailable commands:');
-            console.log('status - Check current status');
-            console.log('stop   - Stop farming and return to menu');
-            console.log('help   - Show this help message');
+            console.log('\nstatus - Check status');
+            console.log('stop - Stop and return');
+            console.log('help - Show commands');
             break;
 
           default:
-            console.log("Unknown command. Type 'help' for available commands.");
+            console.log("Unknown. Type 'help'");
         }
 
-        if (isFarming) processCommands();
+        if (isFarming) processCmd();
       });
     }
 
-    processCommands();
+    processCmd();
   }
 
-  function showConfigStatus(): void {
+  function showStatus(): void {
     const config = configManager.get();
-    
     console.log(`Account: ${config.accountName}`);
-    console.log(`Games: ${config.games?.length || 0} configured`);
-    console.log(`2FA: ${config.sharedSecret && config.sharedSecret !== 'THIS_IS_OPTIONAL' ? 'Configured' : 'Not configured'}`);
-    console.log(`Custom Status: ${config.customStatus ? `"${config.customStatus}"` : 'Not set'}`);
+    console.log(`Games: ${config.games?.length || 0}`);
+    console.log(`2FA: ${config.sharedSecret && config.sharedSecret !== 'THIS_IS_OPTIONAL' ? 'Yes' : 'No'}`);
+    console.log(`Status: ${config.customStatus ? `"${config.customStatus}"` : 'None'}`);
     
     if (!configManager.isValidForFarming()) {
-      console.log('\nConfiguration Status: Not ready for farming');
-      console.log('Please edit user-config.json with your Steam account details.');
+      console.log('\nNot ready. Edit config.');
     } else {
-      console.log('\nConfiguration Status: Ready for farming');
+      console.log('\nReady!');
     }
   }
 
-  async function showMainMenu(): Promise<void> {
+  async function showMenu(): Promise<void> {
     try {
-      clearConsole();
-
+      clearScreen();
       console.log('\n===== Steam Playtime Farmer =====');
-      showConfigStatus();
+      showStatus();
 
-      console.log('\nOptions:');
-      console.log('1. Start Farming');
-      console.log('2. View Configuration');
+      console.log('\n1. Start Farming');
+      console.log('2. View Config');
       console.log('3. Exit');
 
-      const choice = await question('\nEnter your choice (1-3): ');
+      const choice = await question('\nChoice (1-3): ');
 
       switch (choice) {
         case '1':
           await startFarming();
           break;
         case '2':
-          await viewConfiguration();
+          await viewConfig();
           break;
         case '3':
-          exitApplication();
+          console.log('\nExiting...');
+          steamClient.stopFarming();
+          rl.close();
+          process.exit(0);
           break;
         default:
-          console.log('Invalid choice.');
-          await waitForEnter();
-          showMainMenu();
+          console.log('Invalid.');
+          await waitEnter();
+          showMenu();
       }
     } catch (err) {
-      console.error('Error in main menu:', err);
-      await waitForEnter('\nAn error occurred. Press Enter to restart the menu...');
-      showMainMenu();
+      console.error('Menu error:', err);
+      await waitEnter('\nPress Enter...');
+      showMenu();
     }
   }
 
-  async function viewConfiguration(): Promise<void> {
-    clearConsole();
-    console.log('\n===== Current Configuration =====');
+  async function viewConfig(): Promise<void> {
+    clearScreen();
+    console.log('\n===== Config =====');
     
-    const config = configManager.get();
+    const c = configManager.get();
     
-    console.log(`Account Name: ${config.accountName}`);
-    console.log(`Shared Secret: ${config.sharedSecret ? (config.sharedSecret === 'THIS_IS_OPTIONAL' ? 'Not configured' : 'Configured') : 'Not configured'}`);
-    console.log(`Password: ${config.password && config.password !== 'YOUR_PASSWORD_HERE' ? 'Configured' : 'Not configured'}`);
-    console.log(`Custom Status: ${config.customStatus ? `"${config.customStatus}"` : 'Not set'}`);
+    console.log(`Account: ${c.accountName}`);
+    console.log(`Secret: ${c.sharedSecret && c.sharedSecret !== 'THIS_IS_OPTIONAL' ? 'Set' : 'Not set'}`);
+    console.log(`Password: ${c.password && c.password !== 'YOUR_PASSWORD_HERE' ? 'Set' : 'Not set'}`);
+    console.log(`Custom Status: ${c.customStatus || 'Not set'}`);
     
-    console.log('\nConfigured Games:');
-    if (config.games && config.games.length > 0) {
-      config.games.forEach((game, index) => {
-        console.log(`${index + 1}. ${game.name} (AppID: ${game.appId})`);
+    console.log('\nGames:');
+    if (c.games?.length > 0) {
+      c.games.forEach((g, i) => {
+        console.log(`${i + 1}. ${g.name} (${g.appId})`);
       });
     } else {
-      console.log('No games configured.');
+      console.log('None');
     }
     
-    console.log('\nTo modify the configuration, edit the user-config.json file.');
-    
-    await waitForEnter();
-    showMainMenu();
+    console.log('\nEdit user-config.json to change.');
+    await waitEnter();
+    showMenu();
   }
 
   return {
-    start: showMainMenu,
+    start: showMenu,
     close: (): void => rl.close(),
   };
 }
