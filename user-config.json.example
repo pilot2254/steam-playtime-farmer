@@ -3,14 +3,18 @@
   "sharedSecret": "",
   "games": [
     {
-      "appId": 730,
-      "name": "Counter-Strike 2"
+      "appId":221410,
+      "name":"Steam for Linux"
     },
     {
-      "appId": 440,
-      "name": "Team Fortress 2"
+      "appId":730,
+      "name":"Counter Strike 2"
+    },
+    {
+      "appId":2073620,
+      "name":"Arena Breakout: Infinite"
     }
   ],
   "password": "your_steam_password",
-  "customStatus": "Grinding for cards"
+  "customStatus":"my custom status"
 }
