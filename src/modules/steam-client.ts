@@ -129,7 +129,7 @@ export function createSteamClient() {
       if (customStatus && customStatus.trim()) {
         client.gamesPlayed([customStatus, ...currentGames]);
       } else {
-        client.gamesPlayed(currentGames.length === 1 ? currentGames[0] : currentGames);
+        client.gamesPlayed(currentGames);
       }
 
       const timeout = setTimeout(() => {
