@@ -7,7 +7,6 @@ export interface UserConfig {
   games: SteamGame[];
   password: string;
   customStatus?: string;
-  useCustomStatusOnly?: boolean;
 }
 
 export interface AppPaths {

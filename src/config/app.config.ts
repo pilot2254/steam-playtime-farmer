@@ -41,8 +41,7 @@ export const defaultConfig: UserConfig = {
     }
   ],
   password: 'YOUR_PASSWORD_HERE',
-  customStatus: '',
-  useCustomStatusOnly: false
+  customStatus: ''
 };
 
 export default { appConfig, defaultConfig };

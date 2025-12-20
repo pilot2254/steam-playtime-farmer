@@ -150,29 +150,26 @@ export function createSteamClient() {
     }
 
     try {
-      if (customStatus) {
-        const gameObjects = [
-          {
-            game_id: 0,
-            game_extra_info: customStatus
-          },
-          ...currentGames.map((appId) => appId)
-        ];
-        console.log(`Setting custom status: "${customStatus}"`);
-        client.gamesPlayed(gameObjects);
-      } else if (currentGames.length > 1) {
-        console.log(`Attempting to play ${currentGames.length} games...`);
-        client.gamesPlayed(currentGames);
+      if (customStatus && customStatus.trim() !== '') {
+        console.log(`Setting custom status: "${customStatus}" + ${currentGames.length} games`);
+        client.gamesPlayed([
+          customStatus,
+          ...currentGames
+        ]);
       } else {
-        console.log(`Attempting to play ${currentGames.length} game...`);
-        client.gamesPlayed(currentGames[0]);
+        console.log(`Playing ${currentGames.length} game(s)`);
+        if (currentGames.length === 1) {
+          client.gamesPlayed(currentGames[0]);
+        } else {
+          client.gamesPlayed(currentGames);
+        }
       }
 
       const timeout = setTimeout(() => {
         if (isActive) {
           const playingGames = (client as any)._playingAppIds || [];
-          const statusText = customStatus ? ` with custom status: "${customStatus}"` : '';
-          console.log(`Now playing: ${playingGames.join(', ')}${statusText}`);
+          const statusText = customStatus ? ` (Custom status: "${customStatus}")` : '';
+          console.log(`Active games: ${playingGames.join(', ')}${statusText}`);
         }
       }, 2000);
       
@@ -249,7 +246,7 @@ export function createSteamClient() {
 
       if (client.steamID) {
         console.log('Starting to farm games...');
-        if (customStatus) {
+        if (customStatus && customStatus.trim() !== '') {
           console.log(`Custom status: "${customStatus}"`);
         }
         isActive = true;
