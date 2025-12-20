@@ -6,6 +6,7 @@ export interface UserConfig {
   sharedSecret: string;
   games: SteamGame[];
   password: string;
+  customStatus?: string;
 }
 
 export interface AppPaths {

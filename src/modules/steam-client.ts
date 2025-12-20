@@ -28,8 +28,10 @@ export function createSteamClient() {
 
   let isFarming = false;
   let currentGames: number[] = [];
+  let customStatus: string | undefined;
   let lastLoginDetails: SteamLoginDetails | null = null;
   let activeTimeouts: NodeJS.Timeout[] = [];
+  let isActive = false;
 
   connectionManager.registerCallbacks({
     onReconnecting: (attempt, maxAttempts, delay) => {
@@ -138,27 +140,37 @@ export function createSteamClient() {
       return false;
     }
 
-    if (currentGames.length === 0) {
+    if (currentGames.length === 0 && !customStatus) {
       console.log('No games to play.');
       return false;
     }
 
-    try {
-      console.log(`Attempting to play ${currentGames.length} games...`);
+    if (!isActive) {
+      return false;
+    }
 
-      if (currentGames.length > 1) {
-        const gameObjects = currentGames.map((appId) => ({ 
-          game_id: appId,
-          game_extra_info: `Game ${appId}`
-        }));
-        client.gamesPlayed(gameObjects);
+    try {
+      if (customStatus && customStatus.trim() !== '') {
+        console.log(`Setting custom status: "${customStatus}" + ${currentGames.length} games`);
+        client.gamesPlayed([
+          customStatus,
+          ...currentGames
+        ]);
       } else {
-        client.gamesPlayed(currentGames[0]);
+        console.log(`Playing ${currentGames.length} game(s)`);
+        if (currentGames.length === 1) {
+          client.gamesPlayed(currentGames[0]);
+        } else {
+          client.gamesPlayed(currentGames);
+        }
       }
 
       const timeout = setTimeout(() => {
-        const playingGames = (client as any)._playingAppIds || [];
-        console.log(`Now playing: ${playingGames.join(', ')}`);
+        if (isActive) {
+          const playingGames = (client as any)._playingAppIds || [];
+          const statusText = customStatus ? ` (Custom status: "${customStatus}")` : '';
+          console.log(`Active games: ${playingGames.join(', ')}${statusText}`);
+        }
       }, 2000);
       
       activeTimeouts.push(timeout);
@@ -208,6 +220,7 @@ export function createSteamClient() {
     login: (accountName: string, password?: string, sharedSecret?: string): void => {
       isFarming = false;
       currentGames = [];
+      isActive = false;
       clearActiveTimeouts();
       connectionManager.reset();
       login(accountName, password, sharedSecret);
@@ -222,16 +235,21 @@ export function createSteamClient() {
 
     clearAllHandlers: (...events: EventName[]): void => eventManager.clearAll(...events),
 
-    startFarming: (gameIds: number[]): boolean => {
+    startFarming: (gameIds: number[], status?: string): boolean => {
       if (!Array.isArray(gameIds)) {
         console.error('Invalid game IDs provided');
         return false;
       }
 
       currentGames = gameIds.filter((id) => !isNaN(id));
+      customStatus = status;
 
       if (client.steamID) {
         console.log('Starting to farm games...');
+        if (customStatus && customStatus.trim() !== '') {
+          console.log(`Custom status: "${customStatus}"`);
+        }
+        isActive = true;
         const timeout = setTimeout(() => updateGamesPlayed(), 1000);
         activeTimeouts.push(timeout);
         return true;
@@ -242,6 +260,7 @@ export function createSteamClient() {
     },
 
     stopFarming: (): boolean => {
+      isActive = false;
       clearActiveTimeouts();
       connectionManager.reset();
 
@@ -258,6 +277,7 @@ export function createSteamClient() {
 
       isFarming = false;
       currentGames = [];
+      customStatus = undefined;
       return true;
     },
 
