@@ -13,9 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- HUGE SECURITY ISSUE
     <None Update="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    -->
     <None Update="config.json.example">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
