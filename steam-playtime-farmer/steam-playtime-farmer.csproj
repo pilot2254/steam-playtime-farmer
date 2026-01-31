@@ -12,4 +12,10 @@
     <PackageReference Include="SteamKit2" Version="3.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="config.json.example">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
