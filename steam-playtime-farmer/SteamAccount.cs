@@ -1,4 +1,5 @@
 using SteamKit2;
+using SteamKit2.Internal;
 using System.Diagnostics;
 
 namespace steam_playtime_farmer;
