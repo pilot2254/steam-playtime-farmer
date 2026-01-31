@@ -2,6 +2,7 @@
 
 steam-playtime-farmer/config.json
 !steam-playtime-farmer/config.json.example
+state_*.json
 
 # Created by https://www.toptal.com/developers/gitignore/api/csharp,visualstudio,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=csharp,visualstudio,visualstudiocode
