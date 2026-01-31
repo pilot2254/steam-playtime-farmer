@@ -111,15 +111,7 @@ public class SteamAccount
 
         var msg = new ClientMsgProtobuf<CMsgClientGamesPlayed>(EMsg.ClientGamesPlayed);
 
-        if (!string.IsNullOrWhiteSpace(_config.CustomGame))
-        {
-            msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
-            {
-                game_id = new GameID(0),
-                game_extra_info = _config.CustomGame
-            });
-        }
-
+        // Add real games first
         foreach (var appId in _config.Games)
         {
             msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
@@ -128,6 +120,16 @@ public class SteamAccount
             });
 
             _timers[appId] = Stopwatch.StartNew();
+        }
+
+        // Add custom game last
+        if (!string.IsNullOrWhiteSpace(_config.CustomGame))
+        {
+            msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
+            {
+                game_id = new GameID(0),
+                game_extra_info = _config.CustomGame
+            });
         }
 
         _client.Send(msg);
@@ -181,20 +183,22 @@ public class SteamAccount
                 // Refresh game list
                 var msg = new ClientMsgProtobuf<CMsgClientGamesPlayed>(EMsg.ClientGamesPlayed);
 
+                // Real games first
+                foreach (var appId in _config.Games)
+                {
+                    msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
+                    {
+                        game_id = new GameID(appId)
+                    });
+                }
+
+                // Custom game last
                 if (!string.IsNullOrWhiteSpace(_config.CustomGame))
                 {
                     msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
                     {
                         game_id = new GameID(0),
                         game_extra_info = _config.CustomGame
-                    });
-                }
-
-                foreach (var appId in _config.Games)
-                {
-                    msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
-                    {
-                        game_id = new GameID(appId)
                     });
                 }
 
