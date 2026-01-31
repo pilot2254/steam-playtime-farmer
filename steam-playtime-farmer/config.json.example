@@ -3,7 +3,7 @@
     {
       "username": "your_username",
       "password": "your_password",
-      "games": [730, 440],
+      "games": [ 730, 440 ],
       "targetHours": {
         "730": 100
       },
