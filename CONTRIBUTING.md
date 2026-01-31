@@ -86,21 +86,11 @@ chore (deps): update SteamKit2 to 3.5.0
 ## Pull Request Process
 
 1. Update README.md if you're adding features
-2. Update CHANGELOG.md (if it exists) with your changes
-3. Test on at least one platform
-4. Use conventional commit format for PR title
-5. Describe what changed and why in PR description
-6. Link related issues if applicable
+2. Test on at least one platform
+3. Use conventional commit format for PR title
+4. Describe what changed and why in PR description
+5. Link related issues if applicable
 
-### PR Title Format
-```
-<type>(<scope>): <description>
-```
-
-Example:
-```
-feat(auth): add shared secret support for auto-2FA
-```
 
 ## What to Contribute
 
