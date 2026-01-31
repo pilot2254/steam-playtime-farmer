@@ -1,0 +1,14 @@
+{
+  "accounts": [
+    {
+      "username": "acc1",
+      "password": "pass1",
+      "games": [ 730, 440 ],
+      "targetHours": {
+        "730": 100
+      },
+      "status": "Online",
+      "customGame": "Farming..."
+    }
+  ]
+}
