@@ -12,6 +12,9 @@ Farm playtime hours on multiple Steam games simultaneously without actually play
 > [!NOTE]
 > This app was originally built with TypeScript/Node.js but was rewritten in C# to leverage SteamKit2 for better Steam integration. If you want the old Node.js version, check the `nodejs-version` branch.
 
+> [!NOTE]
+> Why not just use ArchiSF? Because my playtime farmer is lightweight, and doesnt have 16 gazillion files. Yes, it doesn't have GUI and all of the other advanced and fancy features.
+
 ## Features
 
 - Farm multiple accounts in parallel

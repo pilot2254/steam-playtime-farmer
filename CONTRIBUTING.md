@@ -2,6 +2,9 @@
 
 Thanks for considering contributing! Here's how to get started.
 
+> [!IMPORTANT]
+> Please don't create pull requests (PRs) for the `main` branch. Only create them for the `dev` branch.
+
 ## Getting Started
 
 1. Fork the repo
