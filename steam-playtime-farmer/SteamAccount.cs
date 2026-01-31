@@ -28,7 +28,6 @@ public class SteamAccount
         _manager.Subscribe<SteamClient.DisconnectedCallback>(OnDisconnected);
         _manager.Subscribe<SteamUser.LoggedOnCallback>(OnLoggedOn);
         _manager.Subscribe<SteamUser.LoggedOffCallback>(OnLoggedOff);
-        _manager.Subscribe<SteamUser.UpdateMachineAuthCallback>(OnMachineAuth);
     }
 
     public async Task RunAsync(CancellationToken ct)
@@ -94,25 +93,6 @@ public class SteamAccount
     private void OnLoggedOff(SteamUser.LoggedOffCallback callback)
     {
         Console.WriteLine($"[{_config.Username}] Logged off: {callback.Result}");
-    }
-
-    private void OnMachineAuth(SteamUser.UpdateMachineAuthCallback callback)
-    {
-        var hash = CryptoHelper.SHAHash(callback.Data);
-        File.WriteAllBytes($"{_config.Username}.sentry", callback.Data);
-
-        _user.SendMachineAuthResponse(new SteamUser.MachineAuthDetails
-        {
-            JobID = callback.JobID,
-            FileName = callback.FileName,
-            BytesWritten = callback.BytesToWrite,
-            FileSize = callback.Data.Length,
-            Offset = callback.Offset,
-            Result = EResult.OK,
-            LastError = 0,
-            OneTimePassword = callback.OneTimePassword,
-            SentryFileHash = hash
-        });
     }
 
     private void StartFarming()
