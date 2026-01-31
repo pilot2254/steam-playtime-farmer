@@ -1,14 +1,16 @@
 {
   "accounts": [
     {
-      "username": "acc1",
-      "password": "pass1",
+      "username": "your_username",
+      "password": "your_password",
       "games": [ 730, 440 ],
       "targetHours": {
         "730": 100
       },
       "status": "Online",
-      "customGame": "Farming..."
+      "customGame": "Farming...",
+      "enableLogging": false
     }
-  ]
+  ],
+  "loginDelaySeconds": 5
 }

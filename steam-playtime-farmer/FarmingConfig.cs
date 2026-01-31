@@ -6,6 +6,9 @@ public class FarmingConfig
 {
     [JsonPropertyName("accounts")]
     public List<AccountConfig> Accounts { get; set; } = new();
+
+    [JsonPropertyName("loginDelaySeconds")]
+    public int LoginDelaySeconds { get; set; } = 5;
 }
 
 public class AccountConfig
@@ -27,4 +30,7 @@ public class AccountConfig
 
     [JsonPropertyName("customGame")]
     public string CustomGame { get; set; } = string.Empty;
+
+    [JsonPropertyName("enableLogging")]
+    public bool EnableLogging { get; set; } = false;
 }

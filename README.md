@@ -9,8 +9,14 @@ Farm playtime hours on multiple Steam games simultaneously without actually play
 >
 > You can farm up to 32 games at once (including custom status → `31 games + 1 custom status = 32 steam applications`)
 
+> [!CAUTION]
+> **SECURITY WARNING**: Your Steam passwords are stored in plain text in `config.json`. Anyone with access to this file can see your credentials. Keep this file secure and don't share it. Consider using a dedicated farming account instead of your main account.
+
 > [!NOTE]
 > This app was originally built with TypeScript/Node.js but was rewritten in C# to leverage SteamKit2 for better Steam integration. If you want the old Node.js version, check the `nodejs-version` branch.
+
+> [!NOTE]
+> Why not just use ArchiSF? Because my playtime farmer is lightweight, and doesnt have 16 gazillion files. Yes, it doesn't have GUI and all of the other advanced and fancy features.
 
 ## Features
 
@@ -21,7 +27,9 @@ Farm playtime hours on multiple Steam games simultaneously without actually play
 - Automatic reconnection on disconnect
 - 2FA support (prompts for email/mobile auth codes)
 - Target hour tracking (auto-stops when reached)
+- **Persistent progress tracking** - Progress is saved and restored across app restarts
 - Simple config-based setup
+- Optional file logging for debugging
 
 ## Requirements
 
@@ -63,9 +71,11 @@ Rename `config.json.example` to `config.json` and edit it:
         "730": 100
       },
       "status": "Online",
-      "customGame": "Farming..."
+      "customGame": "Farming...",
+      "enableLogging": false
     }
-  ]
+  ],
+  "loginDelaySeconds": 5
 }
 ```
 
@@ -77,6 +87,8 @@ Rename `config.json.example` to `config.json` and edit it:
 - **targetHours**: Optional hour targets per game. Format: `{"appId": hours}`. Removes game from farming when target is reached. Omit games you want to farm indefinitely.
 - **status**: Steam online status - `"Online"`, `"Invisible"`, `"Away"`, or `"Offline"` (default: `"Online"`)
 - **customGame**: Custom game name text (optional, shows as "In non-Steam game: [your text]")
+- **enableLogging**: Enable file logging to `logs/username.log` (default: `false`)
+- **loginDelaySeconds**: Delay in seconds between account logins to avoid rate limiting (default: `5`)
 
 ### Finding Game AppIDs
 
@@ -104,6 +116,16 @@ chmod +x steam-playtime-farmer
 ./steam-playtime-farmer
 ```
 
+### State Files
+
+The app creates `state_username.json` files to track farming progress. These files:
+- Store how many seconds you've farmed each game
+- Persist across app restarts
+- Get updated every minute and on shutdown
+- Are automatically cleaned up when games reach target hours
+
+**Don't delete these files while farming** - you'll lose your progress for that account.
+
 ### 2FA / Steam Guard
 
 If you have Steam Guard enabled:
@@ -125,21 +147,33 @@ screen -S farmer
 
 ### Stopping the App
 
-Press `Ctrl+C` to gracefully shut down all farming sessions.
+Press `Ctrl+C` to gracefully shut down all farming sessions. Progress is automatically saved.
+
+### Logging
+
+Enable logging in config to debug issues:
+```json
+"enableLogging": true
+```
+
+Logs are saved to `logs/username.log` with timestamps for all events.
 
 ## How It Works
 
 - Each account runs in a separate parallel session
+- Progress is tracked in `state_username.json` files
 - Games accumulate playtime while the app is running
-- If a game reaches its target hours, it's automatically removed from that account's farming list
+- Progress persists across restarts - if the app crashes or you stop it, progress is saved
+- If a game reaches its target hours, it's automatically removed from that account's farming list and cleaned from the state file
 - When all games for an account reach their targets (or you stop manually), that account's session ends
 - Handles disconnects with automatic reconnection
-- Tracks playtime locally using timers (Steam's official playtime updates periodically on their end)
+- Tracks playtime locally using UTC timestamps (Steam's official playtime updates periodically on their end)
 
 ## Known Issues
 
 - **Custom game status may not display**: When farming real games simultaneously, Steam prioritizes showing actual game names over custom text. Custom status works best when not farming real games, or it may show inconsistently.
 - **Multiple account 2FA prompts**: If running many accounts, 2FA prompts may overlap in the console. Enter codes one at a time as prompted.
+- **Config changes while running**: Don't edit `config.json` while the app is running. Stop the app, make changes, then restart.
 
 ## Troubleshooting
 
@@ -152,6 +186,7 @@ Press `Ctrl+C` to gracefully shut down all farming sessions.
 
 **"Login failed: RateLimitExceeded"**
 - Steam is rate limiting login attempts
+- Increase `loginDelaySeconds` in config
 - Wait a few minutes before trying again
 
 **Disconnects frequently**
@@ -159,6 +194,23 @@ Press `Ctrl+C` to gracefully shut down all farming sessions.
 - Steam servers may be unstable
 - The app will auto-reconnect every 5 seconds
 
-## License
+**"Progress lost after restart"**
+- Make sure you're not deleting `state_username.json` files
+- Check that the app has write permissions in its directory
 
-MIT
+**"Failed to save state"**
+- Check disk space
+- Verify write permissions
+- Check logs if enabled
+
+## File Structure
+
+```
+steam-playtime-farmer/
+├── steam-playtime-farmer.exe    # Main executable
+├── config.json                   # Your configuration (create from .example)
+├── config.json.example           # Example config
+├── state_username.json           # Progress tracking (auto-generated)
+└── logs/                         # Log files (if enabled)
+    └── username.log
+```
