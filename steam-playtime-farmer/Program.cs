@@ -62,6 +62,21 @@ if (errors.Count > 0)
     return;
 }
 
+// Validate Steam's 32 game limit
+for (int i = 0; i < config.Accounts.Count; i++)
+{
+    var acc = config.Accounts[i];
+    var totalApps = acc.Games.Count + (string.IsNullOrWhiteSpace(acc.CustomGame) ? 0 : 1);
+
+    if (totalApps > 32)
+    {
+        Console.WriteLine($"Account {i + 1} ({acc.Username}): Too many games ({totalApps}/32 max)");
+        Console.WriteLine($"  You have {acc.Games.Count} games + {(string.IsNullOrWhiteSpace(acc.CustomGame) ? 0 : 1)} custom status = {totalApps}");
+        Console.WriteLine($"  Steam allows max 32 applications (31 games + 1 custom status, or 32 games without custom status)");
+        return;
+    }
+}
+
 if (config.Accounts.Count > 1 && config.LoginDelaySeconds < 2)
 {
     Console.WriteLine("Warning: loginDelaySeconds < 2 with multiple accounts may cause rate limiting");
