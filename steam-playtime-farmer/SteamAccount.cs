@@ -172,22 +172,20 @@ public class SteamAccount
     {
         var msg = new ClientMsgProtobuf<CMsgClientGamesPlayed>(EMsg.ClientGamesPlayed);
 
-        // Custom game FIRST
+        foreach (var appId in _config.Games)
+        {
+            msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
+            {
+                game_id = new GameID(appId)
+            });
+        }
+
         if (!string.IsNullOrWhiteSpace(_config.CustomGame))
         {
             msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
             {
                 game_id = new GameID(0),
                 game_extra_info = _config.CustomGame
-            });
-        }
-
-        // Real games AFTER
-        foreach (var appId in _config.Games)
-        {
-            msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
-            {
-                game_id = new GameID(appId)
             });
         }
 
@@ -261,6 +259,7 @@ public class SteamAccount
 
             var existingState = LoadState();
 
+            // For currently farming games, calculate total time
             foreach (var (appId, startTime) in _farmingStartTimes)
             {
                 var sessionSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
@@ -268,14 +267,21 @@ public class SteamAccount
                 state.FarmedSeconds[appId] = previousSeconds + sessionSeconds;
             }
 
+            // For games we stopped farming but haven't hit target yet, keep their previous time
             foreach (var (appId, seconds) in existingState.FarmedSeconds)
             {
-                if (!state.FarmedSeconds.ContainsKey(appId))
+                if (!_farmingStartTimes.ContainsKey(appId) && _config.Games.Contains(appId))
                     state.FarmedSeconds[appId] = seconds;
             }
 
             var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_stateFile, json);
+
+            // Reset start times to now to prevent double counting
+            foreach (var appId in _farmingStartTimes.Keys.ToList())
+            {
+                _farmingStartTimes[appId] = DateTime.UtcNow;
+            }
         }
         catch (Exception ex)
         {
