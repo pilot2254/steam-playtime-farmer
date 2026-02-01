@@ -21,11 +21,11 @@ copy LICENSE release\osx-arm64\LICENSE
 
 echo.
 echo Creating zip archives...
-powershell -Command "Compress-Archive -Path './release/win-x64/*' -DestinationPath './release/steam-playtime-farmer-win-x64.zip' -Force"
-powershell -Command "Compress-Archive -Path './release/linux-x64/*' -DestinationPath './release/steam-playtime-farmer-linux-x64.zip' -Force"
-powershell -Command "Compress-Archive -Path './release/linux-arm64/*' -DestinationPath './release/steam-playtime-farmer-linux-arm64.zip' -Force"
-powershell -Command "Compress-Archive -Path './release/osx-x64/*' -DestinationPath './release/steam-playtime-farmer-osx-x64.zip' -Force"
-powershell -Command "Compress-Archive -Path './release/osx-arm64/*' -DestinationPath './release/steam-playtime-farmer-osx-arm64.zip' -Force"
+powershell -Command "Compress-Archive -Path './release/win-x64/*' -DestinationPath './release/steam-playtime-farmer_win-x64.zip' -Force"
+powershell -Command "Compress-Archive -Path './release/linux-x64/*' -DestinationPath './release/steam-playtime-farmer_linux-x64.zip' -Force"
+powershell -Command "Compress-Archive -Path './release/linux-arm64/*' -DestinationPath './release/steam-playtime-farmer_linux-arm64.zip' -Force"
+powershell -Command "Compress-Archive -Path './release/osx-x64/*' -DestinationPath './release/steam-playtime-farmer_osx-x64.zip' -Force"
+powershell -Command "Compress-Archive -Path './release/osx-arm64/*' -DestinationPath './release/steam-playtime-farmer_osx-arm64.zip' -Force"
 
 echo.
 echo Done! Zip files are in ./release/
