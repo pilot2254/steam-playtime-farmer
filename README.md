@@ -118,7 +118,7 @@ chmod +x steam-playtime-farmer
 
 ### State Files
 
-The app creates `state_username.json` files to track farming progress. These files:
+The app creates `state/state_username.json` files to track farming progress. These files:
 - Store how many seconds you've farmed each game
 - Persist across app restarts
 - Get updated every minute and on shutdown
@@ -210,7 +210,8 @@ steam-playtime-farmer/
 ├── steam-playtime-farmer.exe    # Main executable
 ├── config.json                   # Your configuration (create from .example)
 ├── config.json.example           # Example config
-├── state_username.json           # Progress tracking (auto-generated)
+├── state/                        # Progress tracking (auto-generated)
+│   └── state_username.json
 └── logs/                         # Log files (if enabled)
     └── username.log
 ```

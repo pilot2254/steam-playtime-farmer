@@ -26,7 +26,9 @@ public class SteamAccount
         _manager = new CallbackManager(_client);
         _user = _client.GetHandler<SteamUser>()!;
         _friends = _client.GetHandler<SteamFriends>()!;
-        _stateFile = $"state_{_config.Username}.json";
+
+        Directory.CreateDirectory("state");
+        _stateFile = $"state/state_{_config.Username}.json";
 
         if (_config.EnableLogging)
         {
