@@ -101,6 +101,13 @@ public class SteamAccount
     {
         Log("Disconnected, reconnecting in 5s...");
         SaveState();
+
+        // Reset start times since we're not farming while disconnected
+        foreach (var appId in _farmingStartTimes.Keys.ToList())
+        {
+            _farmingStartTimes[appId] = DateTime.UtcNow;
+        }
+
         Thread.Sleep(5000);
 
         if (_isRunning)
@@ -131,7 +138,36 @@ public class SteamAccount
         }
 
         Log("Logged in successfully");
+
+        // Reset start times on login
+        foreach (var appId in _farmingStartTimes.Keys.ToList())
+        {
+            _farmingStartTimes[appId] = DateTime.UtcNow;
+        }
+
         StartFarming();
+    }
+
+    private void LogProgress()
+    {
+        var state = LoadState();
+
+        foreach (var appId in _config.Games)
+        {
+            var totalSeconds = state.FarmedSeconds.GetValueOrDefault(appId, 0);
+            var hours = totalSeconds / 3600;
+
+            var appIdStr = appId.ToString();
+            if (_config.TargetHours.ContainsKey(appIdStr))
+            {
+                var target = _config.TargetHours[appIdStr];
+                Log($"Progress - Game {appId}: {hours:F2}h / {target}h ({(hours / target * 100):F1}%)");
+            }
+            else
+            {
+                Log($"Progress - Game {appId}: {hours:F2}h (no target)");
+            }
+        }
     }
 
     private void OnLoggedOff(SteamUser.LoggedOffCallback callback)
@@ -208,18 +244,13 @@ public class SteamAccount
                     continue;
 
                 var targetSeconds = _config.TargetHours[appIdStr] * 3600;
-                var farmedSeconds = state.FarmedSeconds.GetValueOrDefault(appId, 0);
+                var totalFarmedSeconds = state.FarmedSeconds.GetValueOrDefault(appId, 0);
 
-                if (_farmingStartTimes.TryGetValue(appId, out var startTime))
+                if (totalFarmedSeconds >= targetSeconds)
                 {
-                    var currentSessionSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
-                    var totalSeconds = farmedSeconds + currentSessionSeconds;
-
-                    if (totalSeconds >= targetSeconds)
-                    {
-                        Log($"Target reached for {appId} ({_config.TargetHours[appIdStr]}h)");
-                        gamesToRemove.Add(appId);
-                    }
+                    var hours = totalFarmedSeconds / 3600;
+                    Log($"Target reached for {appId} ({hours:F2}h / {_config.TargetHours[appIdStr]}h)");
+                    gamesToRemove.Add(appId);
                 }
             }
 
@@ -245,6 +276,7 @@ public class SteamAccount
             }
 
             SaveState();
+            LogProgress();
         }
     }
 
@@ -259,10 +291,18 @@ public class SteamAccount
 
             var existingState = LoadState();
 
-            // For currently farming games, calculate total time
-            foreach (var (appId, startTime) in _farmingStartTimes)
+            // Reset start times first to prevent double counting if crash happens
+            var sessionTimes = new Dictionary<uint, double>();
+            foreach (var (appId, startTime) in _farmingStartTimes.ToList())
             {
                 var sessionSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
+                sessionTimes[appId] = sessionSeconds;
+                _farmingStartTimes[appId] = DateTime.UtcNow;
+            }
+
+            // For currently farming games, calculate total time
+            foreach (var (appId, sessionSeconds) in sessionTimes)
+            {
                 var previousSeconds = existingState.FarmedSeconds.GetValueOrDefault(appId, 0);
                 state.FarmedSeconds[appId] = previousSeconds + sessionSeconds;
             }
@@ -274,14 +314,11 @@ public class SteamAccount
                     state.FarmedSeconds[appId] = seconds;
             }
 
+            // Atomic write using temp file
+            var tempFile = _stateFile + ".tmp";
             var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_stateFile, json);
-
-            // Reset start times to now to prevent double counting
-            foreach (var appId in _farmingStartTimes.Keys.ToList())
-            {
-                _farmingStartTimes[appId] = DateTime.UtcNow;
-            }
+            File.WriteAllText(tempFile, json);
+            File.Move(tempFile, _stateFile, true);
         }
         catch (Exception ex)
         {
