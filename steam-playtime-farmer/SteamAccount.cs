@@ -208,20 +208,23 @@ public class SteamAccount
     {
         var msg = new ClientMsgProtobuf<CMsgClientGamesPlayed>(EMsg.ClientGamesPlayed);
 
-        foreach (var appId in _config.Games)
-        {
-            msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
-            {
-                game_id = new GameID(appId)
-            });
-        }
-
+        // Custom game FIRST (like in the old nodejs version)
+        // This prioritizes showing the custom game over the official steam ones
         if (!string.IsNullOrWhiteSpace(_config.CustomGame))
         {
             msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
             {
                 game_id = new GameID(0),
                 game_extra_info = _config.CustomGame
+            });
+        }
+
+        // Real games AFTER
+        foreach (var appId in _config.Games)
+        {
+            msg.Body.games_played.Add(new CMsgClientGamesPlayed.GamePlayed
+            {
+                game_id = new GameID(appId)
             });
         }
 
