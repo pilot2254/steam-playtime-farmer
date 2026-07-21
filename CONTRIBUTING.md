@@ -128,7 +128,7 @@ Be open to feedback and ready to make changes.
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions will be covered under the same LICENSE as the rest of this repo.
 
 ## Questions?
 
