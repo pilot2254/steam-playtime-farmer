@@ -1,4 +1,5 @@
 using SteamKit2;
+using SteamKit2.Authentication;
 using SteamKit2.Internal;
 using System.Text.Json;
 
@@ -13,10 +14,12 @@ public class SteamAccount
     private readonly SteamFriends _friends;
 
     private bool _isRunning;
-    private string? _authCode;
-    private string? _twoFactorAuth;
+    private bool _usingCachedToken;
+    private string? _cachedRefreshToken;
+    private string? _guardData;
     private readonly Dictionary<uint, DateTime> _farmingStartTimes = new();
     private readonly string _stateFile;
+    private readonly string _authCacheFile;
     private readonly string? _logFile;
 
     public SteamAccount(AccountConfig config)
@@ -29,6 +32,7 @@ public class SteamAccount
 
         Directory.CreateDirectory("state");
         _stateFile = $"state/state_{_config.Username}.json";
+        _authCacheFile = $"state/auth_{_config.Username}.json";
 
         if (_config.EnableLogging)
         {
@@ -42,6 +46,7 @@ public class SteamAccount
         _manager.Subscribe<SteamUser.LoggedOffCallback>(OnLoggedOff);
 
         LoadState();
+        LoadAuthCache();
     }
 
     private void Log(string message)
@@ -86,16 +91,59 @@ public class SteamAccount
         }
     }
 
-    private void OnConnected(SteamClient.ConnectedCallback callback)
+    private async void OnConnected(SteamClient.ConnectedCallback callback)
     {
-        Log("Connected, logging in...");
+        Log("Connected, authenticating...");
 
-        _user.LogOn(new SteamUser.LogOnDetails
+        try
+        {
+            if (_cachedRefreshToken != null)
+            {
+                _usingCachedToken = true;
+                _user.LogOn(new SteamUser.LogOnDetails
+                {
+                    Username = _config.Username,
+                    AccessToken = _cachedRefreshToken,
+                    ShouldRememberPassword = true
+                });
+                return;
+            }
+
+            await LoginWithCredentialsAsync();
+        }
+        catch (Exception ex)
+        {
+            Log($"Authentication failed: {ex.Message}");
+            _isRunning = false;
+        }
+    }
+
+    private async Task LoginWithCredentialsAsync()
+    {
+        _usingCachedToken = false;
+
+        var authSession = await _client.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails
         {
             Username = _config.Username,
             Password = _config.Password,
-            AuthCode = _authCode,
-            TwoFactorCode = _twoFactorAuth
+            IsPersistentSession = true,
+            GuardData = _guardData,
+            Authenticator = new UserConsoleAuthenticator()
+        });
+
+        var pollResponse = await authSession.PollingWaitForResultAsync();
+
+        _cachedRefreshToken = pollResponse.RefreshToken;
+        if (pollResponse.NewGuardData != null)
+            _guardData = pollResponse.NewGuardData;
+
+        SaveAuthCache();
+
+        _user.LogOn(new SteamUser.LogOnDetails
+        {
+            Username = pollResponse.AccountName,
+            AccessToken = pollResponse.RefreshToken,
+            ShouldRememberPassword = true
         });
     }
 
@@ -120,21 +168,19 @@ public class SteamAccount
     {
         if (callback.Result != EResult.OK)
         {
-            if (callback.Result == EResult.AccountLogonDenied)
+            if (_usingCachedToken &&
+                (callback.Result == EResult.InvalidPassword ||
+                 callback.Result == EResult.Expired ||
+                 callback.Result == EResult.AccessDenied))
             {
-                Console.Write($"[{_config.Username}] Email auth code: ");
-                _authCode = Console.ReadLine();
+                Log("Cached session expired, re-authenticating...");
+                _cachedRefreshToken = null;
+                SaveAuthCache();
+                _ = LoginWithCredentialsAsync();
                 return;
             }
 
-            if (callback.Result == EResult.AccountLoginDeniedNeedTwoFactor)
-            {
-                Console.Write($"[{_config.Username}] 2FA code: ");
-                _twoFactorAuth = Console.ReadLine();
-                return;
-            }
-
-            Log($"Login failed: {callback.Result}");
+            Log($"Login failed: {callback.Result} / {callback.ExtendedResult}");
             _isRunning = false;
             return;
         }
@@ -349,6 +395,38 @@ public class SteamAccount
         return new FarmingState();
     }
 
+    private void LoadAuthCache()
+    {
+        try
+        {
+            if (File.Exists(_authCacheFile))
+            {
+                var json = File.ReadAllText(_authCacheFile);
+                var cache = JsonSerializer.Deserialize<AuthCache>(json);
+                _cachedRefreshToken = cache?.RefreshToken;
+                _guardData = cache?.GuardData;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to load auth cache: {ex.Message}");
+        }
+    }
+
+    private void SaveAuthCache()
+    {
+        try
+        {
+            var cache = new AuthCache { RefreshToken = _cachedRefreshToken, GuardData = _guardData };
+            var json = JsonSerializer.Serialize(cache);
+            File.WriteAllText(_authCacheFile, json);
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to save auth cache: {ex.Message}");
+        }
+    }
+
     private void CleanupCompletedGames(List<uint> completedGames)
     {
         try
@@ -374,5 +452,11 @@ public class SteamAccount
     private class FarmingState
     {
         public Dictionary<uint, double> FarmedSeconds { get; set; } = new();
+    }
+
+    private class AuthCache
+    {
+        public string? RefreshToken { get; set; }
+        public string? GuardData { get; set; }
     }
 }
